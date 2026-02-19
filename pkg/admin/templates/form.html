@@ -1,0 +1,54 @@
+{{define "title"}}{{if .Item}}Edit{{else}}New{{end}} {{.CurrentResource.Name}}{{end}}
+
+{{define "actions"}}
+<a href="/admin/{{.CurrentResource.Name}}" class="btn">Back to List</a>
+{{end}}
+
+{{define "content"}}
+<form action="/admin/{{.CurrentResource.Name}}/save" method="POST" style="padding: 2rem;">
+    {{if .Item}}
+    <input type="hidden" name="ID" value="{{index .Item "ID"}}">
+    {{end}}
+    
+    {{range .Fields}}
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted);">{{.Label}}</label>
+        
+        {{$fieldName := .Name}}
+        {{$assoc := index $.Associations $fieldName}}
+
+        {{if .Readonly}}
+            <div style="padding: 0.75rem; background: #f1f5f9; border-radius: 0.375rem; border: 1px solid var(--border);">
+                {{if $.Item}}{{index $.Item .Name}}{{else}}Auto-generated{{end}}
+            </div>
+        {{else if $assoc}}
+            <!-- BelongsTo Dropdown -->
+            <select name="{{.Name}}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.875rem;">
+                <option value="0">None</option>
+                {{$currentVal := 0}}{{if $.Item}}{{$currentVal = index $.Item .Name}}{{end}}
+                {{range $assoc.Options}}
+                <option value="{{index . "ID"}}" {{if eq (index . "ID") $currentVal}}selected{{end}}>
+                    {{if index . "Name"}}{{index . "Name"}}{{else if index . "Email"}}{{index . "Email"}}{{else}}ID: {{index . "ID"}}{{end}}
+                </option>
+                {{end}}
+            </select>
+        {{else if eq .Type "select"}}
+            <select name="{{.Name}}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.875rem;">
+                {{$currentVal := ""}}{{if $.Item}}{{$currentVal = index $.Item .Name}}{{end}}
+                {{range .Options}}
+                <option value="{{.}}" {{if eq . $currentVal}}selected{{end}}>{{.}}</option>
+                {{end}}
+            </select>
+        {{else}}
+            <input type="text" name="{{.Name}}" value="{{if $.Item}}{{index $.Item .Name}}{{end}}" 
+                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.875rem;">
+        {{end}}
+    </div>
+    {{end}}
+    
+    <div style="margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary">Save {{.CurrentResource.Name}}</button>
+    </div>
+</form>
+{{end}}
+{{template "layout" .}}

@@ -1,0 +1,46 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.SiteTitle}}</title>
+    <style>{{.CSS}}</style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>{{.SiteTitle}}</h1>
+        <a href="/admin" class="nav-item">Dashboard</a>
+        
+        <div style="margin-top: 1rem;">
+            {{range $group, $resList := .GroupedResources}}
+                {{if eq $group "Default"}}
+                    {{range $resList}}
+                        <a href="/admin/{{.Name}}" class="nav-item">{{.Name}}</a>
+                    {{end}}
+                {{else}}
+                    <div style="padding: 0.75rem 1rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-top: 1rem;">
+                        {{$group}}
+                    </div>
+                    {{range $resList}}
+                        <a href="/admin/{{.Name}}" class="nav-item" style="padding-left: 2rem;">{{.Name}}</a>
+                    {{end}}
+                {{end}}
+            {{end}}
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; border-top: 1px solid #334155;">
+            <a href="/admin/logout" class="nav-item" style="color: #f87171;">Logout</a>
+        </div>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h2>{{template "title" .}}</h2>
+            {{template "actions" .}}
+        </div>
+        <div class="card">
+            {{template "content" .}}
+        </div>
+    </div>
+</body>
+</html>
+{{end}}
+{{define "actions"}}{{end}}

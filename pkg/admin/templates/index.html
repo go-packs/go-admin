@@ -1,0 +1,112 @@
+{{define "title"}}{{.CurrentResource.Name}}{{end}}
+
+{{define "actions"}}
+    {{range .CurrentResource.CollectionActions}}
+    <a href="/admin/{{$.CurrentResource.Name}}/collection_action?name={{.Name}}" class="btn" style="background: #f1f5f9; border: 1px solid var(--border); margin-right: 0.5rem;">{{.Label}}</a>
+    {{end}}
+    <a href="/admin/{{.CurrentResource.Name}}/new" class="btn btn-primary">+ New {{.CurrentResource.Name}}</a>
+{{end}}
+
+{{define "content"}}
+<div class="scopes-bar">
+    <a href="?scope=" class="scope-link {{if eq .CurrentScope ""}}active{{end}}">All</a>
+    {{range .Scopes}}
+    <a href="?scope={{.Name}}" class="scope-link {{if eq $.CurrentScope .Name}}active{{end}}">{{.Label}}</a>
+    {{end}}
+</div>
+
+<div style="display: flex;">
+    <div style="flex-grow: 1; border-right: 1px solid var(--border);">
+        <form id="batch-form" action="/admin/{{.CurrentResource.Name}}/batch_action" method="POST">
+            <div id="batch-actions-bar" style="padding: 0.75rem 1rem; background: #f8fafc; border-bottom: 1px solid var(--border); display: none; align-items: center; gap: 1rem;">
+                <span style="font-size: 0.875rem; color: var(--text-muted);"><span id="selected-count">0</span> items selected</span>
+                <select name="action_name" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.875rem;">
+                    <option value="">Select Action...</option>
+                    {{range .CurrentResource.BatchActions}}
+                    <option value="{{.Name}}">{{.Label}}</option>
+                    {{end}}
+                </select>
+                <button type="submit" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Apply</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="select-all"></th>
+                        {{range .Fields}}
+                        <th>{{.Label}}</th>
+                        {{end}}
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Data}}
+                    <tr>
+                        <td><input type="checkbox" name="ids" value="{{index . "ID"}}" class="item-checkbox"></td>
+                        {{$item := .}}
+                        {{range $.Fields}}
+                        <td>{{index $item .Name}}</td>
+                        {{end}}
+                        <td style="text-align: right;">
+                            <a href="/admin/{{$.CurrentResource.Name}}/show?id={{index $item "ID"}}" style="color: var(--primary); text-decoration: none; margin-left: 1rem; font-size: 0.8125rem;">View</a>
+                            <a href="/admin/{{$.CurrentResource.Name}}/edit?id={{index $item "ID"}}" style="color: var(--primary); text-decoration: none; margin-left: 1rem; font-size: 0.8125rem;">Edit</a>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </form>
+
+        <!-- Pagination & Export -->
+        <div class="pagination">
+            <div class="pagination-info">
+                Download: <a href="/admin/{{.CurrentResource.Name}}/export" style="color: var(--primary); font-weight: 600;">CSV</a>
+                <span style="margin-left: 1rem;">Showing {{.Page}} of {{.TotalPages}} ({{.TotalCount}} records)</span>
+            </div>
+            <div class="pagination-links">
+                <a href="?page={{.PrevPage}}&scope={{.CurrentScope}}" class="page-link {{if not .HasPrev}}disabled{{end}}">&laquo; Previous</a>
+                <a href="?page={{.NextPage}}&scope={{.CurrentScope}}" class="page-link {{if not .HasNext}}disabled{{end}}">Next &raquo;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Sidebar -->
+    <div style="width: 240px; padding: 1.5rem; background: #fafafa; flex-shrink: 0;">
+        <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">Filters</h4>
+        <form action="/admin/{{.CurrentResource.Name}}" method="GET">
+            <input type="hidden" name="scope" value="{{.CurrentScope}}">
+            {{range .Fields}}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">{{.Label}}</label>
+                <input type="text" name="q_{{.Name}}" value="{{index $.Filters .Name}}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
+            </div>
+            {{end}}
+            <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 0.75rem;">Apply Filters</button>
+            <a href="/admin/{{.CurrentResource.Name}}?scope={{.CurrentScope}}" style="display: block; text-align: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-decoration: none;">Clear</a>
+        </form>
+    </div>
+</div>
+
+<script>
+    const selectAll = document.getElementById('select-all');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const batchBar = document.getElementById('batch-actions-bar');
+    const selectedCount = document.getElementById('selected-count');
+
+    function updateBatchBar() {
+        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        selectedCount.textContent = checkedCount;
+        batchBar.style.display = checkedCount > 0 ? 'flex' : 'none';
+    }
+
+    selectAll.addEventListener('change', (e) => {
+        itemCheckboxes.forEach(cb => cb.checked = e.target.checked);
+        updateBatchBar();
+    });
+
+    itemCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBatchBar);
+    });
+</script>
+{{end}}
+{{template "layout" .}}

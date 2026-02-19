@@ -1,0 +1,103 @@
+{{define "title"}}Dashboard{{end}}
+
+{{define "actions"}}
+<div style="color: var(--text-muted); font-size: 0.875rem;">
+    Logged in as <strong>{{.User.Email}}</strong>
+</div>
+{{end}}
+
+{{define "content"}}
+<div style="padding: 2rem;">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        {{range .Stats}}
+        <div class="stat-card">
+            <div class="stat-label">{{.Label}}</div>
+            <div class="stat-value">{{.Value}}</div>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Charts Grid -->
+    {{if .ChartData}}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
+        {{range .ChartData}}
+        <div class="card" style="padding: 1.5rem;">
+            <h3 style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em;">{{.Label}}</h3>
+            <div style="height: 300px;">
+                <canvas id="{{.ID}}"></canvas>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
+    <!-- System Overview -->
+    <div class="card">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border);">
+            <h3 style="font-size: 1rem;">System Overview</h3>
+        </div>
+        <div style="padding: 1.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.6;">
+                Welcome to your Go Admin panel. From here you can manage all your resources, roles, and permissions. 
+                Use the sidebar to navigate between different models.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {{range .ChartData}}
+        new Chart(document.getElementById('{{.ID}}'), {
+            type: '{{.Type}}',
+            data: {
+                labels: {{.Labels}},
+                datasets: [{
+                    label: '{{.Label}}',
+                    data: {{.Values}},
+                    backgroundColor: [
+                        'rgba(37, 99, 235, 0.2)',
+                        'rgba(16, 185, 129, 0.2)',
+                        'rgba(245, 158, 11, 0.2)',
+                        'rgba(239, 68, 68, 0.2)',
+                        'rgba(139, 92, 246, 0.2)'
+                    ],
+                    borderColor: [
+                        '#2563eb',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444',
+                        '#8b5cf6'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: {{if eq .Type "pie"}}true{{else}}false{{end}} }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        display: {{if eq .Type "pie"}}false{{else}}true{{end}},
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        display: {{if eq .Type "pie"}}false{{else}}true{{end}},
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+        {{end}}
+    });
+</script>
+{{end}}
+{{template "layout" .}}
