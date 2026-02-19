@@ -3,8 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/ajeet-kumar1087/go-admin/pkg/admin"
+	"github.com/ajeet-kumar1087/go-admin/pkg/admin/config"
+	"github.com/ajeet-kumar1087/go-admin/pkg/admin/models"
+	"github.com/ajeet-kumar1087/go-admin/pkg/admin/resource"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -41,12 +45,12 @@ func main() {
 	}
 
 	// Migrate schemas
-	db.AutoMigrate(&User{}, &Product{}, &ProductInfo{}, &admin.Permission{}, &Role{}, &admin.AdminUser{}, &admin.Session{}, &admin.AuditLog{})
+	db.AutoMigrate(&User{}, &Product{}, &ProductInfo{}, &models.Permission{}, &Role{}, &models.AdminUser{}, &models.Session{}, &models.AuditLog{})
 
 	adm := admin.NewRegistry(db)
 
 	// Load Custom Config
-	conf, err := admin.LoadConfig("admin.yml")
+	conf, err := config.LoadConfig("admin.yml")
 	if err == nil {
 		adm.SetConfig(conf)
 	}
@@ -54,22 +58,22 @@ func main() {
 	roles := []string{"admin", "editor", "viewer"}
 
 	// Activity Action Helper
-	addActivityAction := func(r *admin.Resource) {
-		r.AddMemberAction("activity", "View History", func(res *admin.Resource, w http.ResponseWriter, r *http.Request) {
+	addActivityAction := func(r *resource.Resource) {
+		r.AddMemberAction("activity", "View History", func(res *resource.Resource, w http.ResponseWriter, r *http.Request) {
 			id := r.URL.Query().Get("id")
 			http.Redirect(w, r, fmt.Sprintf("/admin/AuditLog?q_ResourceName=%s&q_RecordID=%s", res.Name, id), http.StatusSeeOther)
 		})
 	}
 
 	// Administration Group
-	adm.Register(admin.AdminUser{}).
+	adm.Register(models.AdminUser{}).
 		SetGroup("Administration").
 		RegisterField("ID", "ID", true).
 		RegisterField("Email", "Email", false).
 		RegisterField("Role", "Role", false).
 		SetFieldType("Role", "select", roles...)
 
-	adm.Register(admin.AuditLog{}).
+	adm.Register(models.AuditLog{}).
 		SetGroup("Administration").
 		RegisterField("ID", "ID", true).
 		RegisterField("CreatedAt", "Time", true).
@@ -84,7 +88,7 @@ func main() {
 		RegisterField("ID", "ID", true).
 		RegisterField("Name", "Role Name", false)
 
-	adm.Register(admin.Permission{}).
+	adm.Register(models.Permission{}).
 		SetGroup("Administration").
 		RegisterField("ID", "ID", true).
 		RegisterField("Role", "Role Name", false).
@@ -100,7 +104,7 @@ func main() {
 		RegisterField("Email", "Email Address", false).
 		RegisterField("Role", "User Role", false).
 		SetFieldType("Role", "select", roles...).
-		AddMemberAction("activate", "Activate User", func(res *admin.Resource, w http.ResponseWriter, r *http.Request) {
+		AddMemberAction("activate", "Activate User", func(res *resource.Resource, w http.ResponseWriter, r *http.Request) {
 			id := r.URL.Query().Get("id")
 			fmt.Fprintf(w, "User %s has been activated! (Simulated)", id)
 		}).
@@ -122,12 +126,12 @@ func main() {
 		SetFieldType("Price", "number").
 		SetFieldType("Image", "image").
 		HasMany("ProductInfo", "Technical Specifications", "ProductInfo", "ProductID").
-		AddCollectionAction("discount", "Apply 10% Bulk Discount", func(res *admin.Resource, w http.ResponseWriter, r *http.Request) {
-			adm.DB.Model(&Product{}).Where("price > ?", 0).Update("price", gorm.Expr("price * 0.9"))
+		AddCollectionAction("discount", "Apply 10% Bulk Discount", func(res *resource.Resource, w http.ResponseWriter, r *http.Request) {
+			db.Model(&Product{}).Where("price > ?", 0).Update("price", gorm.Expr("price * 0.9"))
 			http.Redirect(w, r, "/admin/Product", http.StatusSeeOther)
 		}).
-		AddBatchAction("batch_delete", "Delete Selected", func(res *admin.Resource, ids []string, w http.ResponseWriter, r *http.Request) {
-			adm.DB.Where("id IN ?", ids).Delete(&Product{})
+		AddBatchAction("batch_delete", "Delete Selected", func(res *resource.Resource, ids []string, w http.ResponseWriter, r *http.Request) {
+			db.Where("id IN ?", ids).Delete(&Product{})
 			http.Redirect(w, r, "/admin/Product", http.StatusSeeOther)
 		}).
 		AddScope("expensive", "Expensive (> $500)", func(db *gorm.DB) *gorm.DB {
@@ -155,12 +159,8 @@ func main() {
 			Count int64
 		}
 		db.Model(&User{}).Select("role, count(*) as count").Group("role").Scan(&results)
-		labels := []string{}
-		values := []float64{}
-		for _, r := range results {
-			labels = append(labels, r.Role)
-			values = append(values, float64(r.Count))
-		}
+		labels := []string{}; values := []float64{}
+		for _, r := range results { labels = append(labels, r.Role); values = append(values, float64(r.Count)) }
 		return labels, values
 	})
 
@@ -170,12 +170,8 @@ func main() {
 			Price float64
 		}
 		db.Model(&Product{}).Limit(5).Scan(&results)
-		labels := []string{}
-		values := []float64{}
-		for _, r := range results {
-			labels = append(labels, r.Name)
-			values = append(values, r.Price)
-		}
+		labels := []string{}; values := []float64{}
+		for _, r := range results { labels = append(labels, r.Name); values = append(values, r.Price) }
 		return labels, values
 	})
 
@@ -195,42 +191,25 @@ func main() {
 	})
 
 	// 6. Seed Data
-	var adminCount int64
-	db.Model(&admin.AdminUser{}).Count(&adminCount)
+	var adminCount int64; db.Model(&models.AdminUser{}).Count(&adminCount)
 	if adminCount == 0 {
-		// Create Admin User
-		adminUser := &admin.AdminUser{Email: "admin@example.com", Role: "admin"}
-		adminUser.SetPassword("password123")
-		db.Create(adminUser)
-
-		// Create Roles
-		db.Create(&Role{Name: "admin"})
-		db.Create(&Role{Name: "editor"})
-		db.Create(&Role{Name: "viewer"})
-
-		// Seed permissions for editor
-		db.Create(&admin.Permission{Role: "editor", ResourceName: "Product", Action: "list"})
-		db.Create(&admin.Permission{Role: "editor", ResourceName: "Product", Action: "show"})
-		db.Create(&admin.Permission{Role: "editor", ResourceName: "Product", Action: "edit"})
-		db.Create(&admin.Permission{Role: "editor", ResourceName: "Product", Action: "save"})
-
-		// Seed Products and Info
+		adminUser := &models.AdminUser{Email: "admin@example.com", Role: "admin"}
+		adminUser.SetPassword("password123"); db.Create(adminUser)
+		db.Create(&Role{Name: "admin"}); db.Create(&Role{Name: "editor"}); db.Create(&Role{Name: "viewer"})
+		db.Create(&models.Permission{Role: "editor", ResourceName: "Product", Action: "list"})
+		db.Create(&models.Permission{Role: "editor", ResourceName: "Product", Action: "show"})
+		db.Create(&models.Permission{Role: "editor", ResourceName: "Product", Action: "edit"})
+		db.Create(&models.Permission{Role: "editor", ResourceName: "Product", Action: "save"})
 		p1 := &Product{Name: "Mechanical Keyboard", Price: 150.00}
 		p2 := &Product{Name: "Gaming Mouse", Price: 80.00}
-		db.Create(p1)
-		db.Create(p2)
-		
+		db.Create(p1); db.Create(p2)
 		db.Create(&ProductInfo{ProductID: p1.ID, Description: "Blue Switches", Manufacturer: "Razer"})
 		db.Create(&ProductInfo{ProductID: p1.ID, Description: "RGB Lighting", Manufacturer: "Razer"})
-
-		// Seed a regular user for the chart
 		db.Create(&User{Email: "user@example.com", Role: "editor"})
 	}
 
 	port := ":8080"
 	fmt.Printf("\n🚀 Admin panel running at http://localhost%s/admin\n", port)
-	fmt.Println("👉 Default Credentials: admin@example.com / password123")
-	
 	http.Handle("/admin/", adm)
 	log.Fatal(http.ListenAndServe(port, nil))
 }
