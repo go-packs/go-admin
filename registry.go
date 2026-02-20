@@ -2,9 +2,9 @@ package admin
 
 import (
 	"fmt"
-	"github.com/ajeet-kumar1087/go-admin/pkg/admin/config"
-	"github.com/ajeet-kumar1087/go-admin/pkg/admin/models"
-	"github.com/ajeet-kumar1087/go-admin/pkg/admin/resource"
+	"github.com/ajeet-kumar1087/go-admin/config"
+	"github.com/ajeet-kumar1087/go-admin/models"
+	"github.com/ajeet-kumar1087/go-admin/resource"
 	"gorm.io/gorm"
 	"net/http"
 	"time"
@@ -46,7 +46,7 @@ func NewRegistry(db *gorm.DB) *Registry {
 	}
 }
 
-// Public Factory Functions (Facades)
+// Public Factory Functions
 func DefaultConfig() *config.Config { return config.DefaultConfig() }
 func LoadConfig(path string) (*config.Config, error) { return config.LoadConfig(path) }
 func NewResource(model interface{}) *resource.Resource { return resource.NewResource(model) }

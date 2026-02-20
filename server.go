@@ -3,6 +3,8 @@ package admin
 import (
 	"embed"
 	"fmt"
+	"github.com/ajeet-kumar1087/go-admin/models"
+	"github.com/ajeet-kumar1087/go-admin/resource"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -14,15 +16,15 @@ var templateFS embed.FS
 
 type PageData struct {
 	SiteTitle        string
-	Resources        map[string]*Resource
-	GroupedResources map[string][]*Resource
+	Resources        map[string]*resource.Resource
+	GroupedResources map[string][]*resource.Resource
 	GroupedPages     map[string][]*Page
-	CurrentResource  *Resource
-	Fields           []Field
+	CurrentResource  *resource.Resource
+	Fields           []resource.Field
 	Data             []map[string]interface{}
 	Item             map[string]interface{}
 	Filters          map[string]string
-	User             *AdminUser
+	User             *models.AdminUser
 	Stats            []Stat
 	Error            string
 	Flash            string
@@ -32,7 +34,7 @@ type PageData struct {
 	TotalCount       int64
 	HasPrev, HasNext bool
 	PrevPage, NextPage int
-	Scopes           []Scope
+	Scopes           []resource.Scope
 	CurrentScope     string
 	Associations     map[string]AssociationData
 	ChartData        []ChartWidget
@@ -48,8 +50,8 @@ type ChartWidget struct {
 }
 
 type AssociationData struct {
-	Resource *Resource
-	Fields   []Field
+	Resource *resource.Resource
+	Fields   []resource.Field
 	Items    []map[string]interface{}
 	Options  []map[string]interface{}
 }
@@ -72,46 +74,33 @@ func (reg *Registry) getFlash(w http.ResponseWriter, r *http.Request) string {
 
 func (reg *Registry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	upath := strings.TrimPrefix(r.URL.Path, "/admin")
-	
 	if strings.HasPrefix(upath, "/uploads/") {
 		http.ServeFile(w, r, filepath.Join(reg.Config.UploadDir, strings.TrimPrefix(upath, "/uploads/")))
 		return
 	}
-
 	user, role := reg.GetUserFromRequest(r)
-
 	if upath == "/login" {
 		if r.Method == "POST" { reg.handleLogin(w, r); return }
 		reg.renderLogin(w, r, ""); return
 	}
 	if upath == "/logout" { reg.handleLogout(w, r); return }
 	if user == nil { http.Redirect(w, r, "/admin/login", 303); return }
-
 	if upath == "" || upath == "/" { reg.renderDashboard(w, r, user); return }
-
 	if strings.HasSuffix(upath, "/search") {
 		parts := strings.Split(strings.TrimPrefix(upath, "/"), "/")
 		reg.handleSearchAPI(parts[0], w, r); return
 	}
-
 	parts := strings.Split(strings.TrimPrefix(upath, "/"), "/")
 	resourceName := parts[0]
-
-	if page, ok := reg.Pages[resourceName]; ok {
-		page.Handler(w, r); return
-	}
-
+	if page, ok := reg.Pages[resourceName]; ok { page.Handler(w, r); return }
 	res, ok := reg.GetResource(resourceName)
 	if !ok { http.NotFound(w, r); return }
-
 	action := "list"
 	if len(parts) > 1 && parts[1] != "" { action = parts[1] }
-
 	if !reg.IsAllowed(role, resourceName, action) && 
 	   action != "export" && action != "action" && action != "collection_action" && action != "batch_action" {
 		http.Error(w, "Forbidden", 403); return
 	}
-
 	switch action {
 	case "export": reg.handleExport(res, w, r)
 	case "action": reg.handleCustomAction(res, w, r, false)

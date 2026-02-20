@@ -29,7 +29,7 @@ go get github.com/ajeet-kumar1087/go-admin
 package main
 
 import (
-    "github.com/ajeet-kumar1087/go-admin/pkg/admin"
+    "github.com/ajeet-kumar1087/go-admin" // Single user-friendly import
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
     "net/http"

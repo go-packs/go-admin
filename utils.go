@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"github.com/ajeet-kumar1087/go-admin/pkg/admin/resource"
+	"github.com/ajeet-kumar1087/go-admin/resource"
 	"html/template"
 	"reflect"
 )
