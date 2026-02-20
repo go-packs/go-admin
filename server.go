@@ -72,42 +72,114 @@ func (reg *Registry) getFlash(w http.ResponseWriter, r *http.Request) string {
 	return cookie.Value
 }
 
+// ServeHTTP implements the http.Handler interface and routes requests to sub-handlers.
 func (reg *Registry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	upath := strings.TrimPrefix(r.URL.Path, "/admin")
+
+	// 1. Static Asset Routing
 	if strings.HasPrefix(upath, "/uploads/") {
-		http.ServeFile(w, r, filepath.Join(reg.Config.UploadDir, strings.TrimPrefix(upath, "/uploads/")))
+		reg.handleStatic(w, r, upath)
 		return
 	}
+
 	user, role := reg.GetUserFromRequest(r)
-	if upath == "/login" {
-		if r.Method == "POST" { reg.handleLogin(w, r); return }
-		reg.renderLogin(w, r, ""); return
+
+	// 2. Authentication Routing
+	if upath == "/login" || upath == "/logout" {
+		reg.routeAuth(w, r, upath)
+		return
 	}
-	if upath == "/logout" { reg.handleLogout(w, r); return }
-	if user == nil { http.Redirect(w, r, "/admin/login", 303); return }
-	if upath == "" || upath == "/" { reg.renderDashboard(w, r, user); return }
+
+	// 3. Auth Guard
+	if user == nil {
+		http.Redirect(w, r, "/admin/login", 303)
+		return
+	}
+
+	// 4. Dashboard Routing
+	if upath == "" || upath == "/" {
+		reg.renderDashboard(w, r, user)
+		return
+	}
+
+	// 5. Search API Routing
 	if strings.HasSuffix(upath, "/search") {
-		parts := strings.Split(strings.TrimPrefix(upath, "/"), "/")
-		reg.handleSearchAPI(parts[0], w, r); return
+		reg.routeSearch(w, r, upath)
+		return
 	}
+
+	// 6. Main Resource/Page Routing
+	reg.routeMain(w, r, upath, user, role)
+}
+
+func (reg *Registry) handleStatic(w http.ResponseWriter, r *http.Request, upath string) {
+	fileName := strings.TrimPrefix(upath, "/uploads/")
+	http.ServeFile(w, r, filepath.Join(reg.Config.UploadDir, fileName))
+}
+
+func (reg *Registry) routeAuth(w http.ResponseWriter, r *http.Request, upath string) {
+	if upath == "/login" {
+		if r.Method == "POST" {
+			reg.handleLogin(w, r)
+		} else {
+			reg.renderLogin(w, r, "")
+		}
+		return
+	}
+	reg.handleLogout(w, r)
+}
+
+func (reg *Registry) routeSearch(w http.ResponseWriter, r *http.Request, upath string) {
+	parts := strings.Split(strings.TrimPrefix(upath, "/"), "/")
+	reg.handleSearchAPI(parts[0], w, r)
+}
+
+func (reg *Registry) routeMain(w http.ResponseWriter, r *http.Request, upath string, user *models.AdminUser, role string) {
 	parts := strings.Split(strings.TrimPrefix(upath, "/"), "/")
 	resourceName := parts[0]
-	if page, ok := reg.Pages[resourceName]; ok { page.Handler(w, r); return }
-	res, ok := reg.GetResource(resourceName)
-	if !ok { http.NotFound(w, r); return }
-	action := "list"
-	if len(parts) > 1 && parts[1] != "" { action = parts[1] }
-	if !reg.IsAllowed(role, resourceName, action) && 
-	   action != "export" && action != "action" && action != "collection_action" && action != "batch_action" {
-		http.Error(w, "Forbidden", 403); return
+
+	// Check Custom Pages
+	if page, ok := reg.Pages[resourceName]; ok {
+		page.Handler(w, r)
+		return
 	}
+
+	// Check Resources
+	res, ok := reg.GetResource(resourceName)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+
+	action := "list"
+	if len(parts) > 1 && parts[1] != "" {
+		action = parts[1]
+	}
+
+	// Permission Check
+	if !reg.IsAllowed(role, resourceName, action) && 
+	   action != "export" && !strings.Contains(action, "action") {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+
+	reg.handleResourceAction(res, action, w, r, user)
+}
+
+func (reg *Registry) handleResourceAction(res *resource.Resource, action string, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
 	switch action {
-	case "export": reg.handleExport(res, w, r)
-	case "action": reg.handleCustomAction(res, w, r, false)
-	case "collection_action": reg.handleCustomAction(res, w, r, true)
-	case "batch_action": reg.handleBatchAction(res, w, r)
-	case "save": reg.handleSave(res, w, r, user)
-	case "new": reg.renderForm(res, nil, w, r, user)
+	case "export":
+		reg.handleExport(res, w, r)
+	case "action":
+		reg.handleCustomAction(res, w, r, false)
+	case "collection_action":
+		reg.handleCustomAction(res, w, r, true)
+	case "batch_action":
+		reg.handleBatchAction(res, w, r)
+	case "save":
+		reg.handleSave(res, w, r, user)
+	case "new":
+		reg.renderForm(res, nil, w, r, user)
 	case "show":
 		id := r.URL.Query().Get("id")
 		item, _ := reg.Get(res.Name, id)
@@ -122,6 +194,7 @@ func (reg *Registry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		reg.RecordAction(user, res.Name, id, "Delete", "Record deleted")
 		reg.setFlash(w, fmt.Sprintf("%s deleted successfully", res.Name))
 		http.Redirect(w, r, "/admin/"+res.Name, 303)
-	default: reg.renderList(res, w, r, user)
+	default:
+		reg.renderList(res, w, r, user)
 	}
 }
