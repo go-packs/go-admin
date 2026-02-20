@@ -33,6 +33,7 @@ func (reg *Registry) handleLogin(w http.ResponseWriter, r *http.Request) {
 	sessionID := uuid.New().String()
 	reg.DB.Create(&models.Session{ID: sessionID, UserID: user.ID, ExpiresAt: time.Now().Add(time.Duration(reg.Config.SessionTTL) * time.Hour)})
 	http.SetCookie(w, &http.Cookie{Name: "admin_session", Value: sessionID, Path: "/admin", HttpOnly: true})
+	reg.setFlash(w, "Login successful! Welcome back.")
 	http.Redirect(w, r, "/admin", 303)
 }
 

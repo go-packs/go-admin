@@ -2,6 +2,7 @@ package resource
 
 import (
 	"gorm.io/gorm"
+	"html/template"
 	"net/http"
 	"reflect"
 )
@@ -9,6 +10,7 @@ import (
 type ActionHandler func(res *Resource, w http.ResponseWriter, r *http.Request)
 type BatchActionHandler func(res *Resource, ids []string, w http.ResponseWriter, r *http.Request)
 type ScopeFunc func(db *gorm.DB) *gorm.DB
+type DecoratorFunc func(val interface{}) template.HTML
 
 type Action struct {
 	Name, Label string
@@ -35,6 +37,7 @@ type Field struct {
 	Readonly          bool
 	Searchable        bool
 	SearchResource    string
+	Decorator         DecoratorFunc
 }
 
 type Resource struct {
@@ -62,6 +65,16 @@ func (r *Resource) SetGroup(group string) *Resource { r.Group = group; return r 
 
 func (r *Resource) RegisterField(name string, label string, readonly bool) *Resource {
 	r.Fields = append(r.Fields, Field{Name: name, Label: label, Type: "text", Readonly: readonly})
+	return r
+}
+
+func (r *Resource) SetDecorator(name string, fn DecoratorFunc) *Resource {
+	for i, f := range r.Fields {
+		if f.Name == name {
+			r.Fields[i].Decorator = fn
+			break
+		}
+	}
 	return r
 }
 

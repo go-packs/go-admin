@@ -26,6 +26,7 @@ type PageData struct {
 	User             *models.AdminUser
 	Stats            []Stat
 	Error            string
+	Flash            string // Toast message
 	CSS              template.CSS
 	Page, PerPage    int
 	TotalPages       int
@@ -54,6 +55,28 @@ type AssociationData struct {
 type Stat struct {
 	Label string
 	Value int64
+}
+
+func (reg *Registry) setFlash(w http.ResponseWriter, message string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:  "admin_flash",
+		Value: message,
+		Path:  "/admin",
+		HttpOnly: true,
+	})
+}
+
+func (reg *Registry) getFlash(w http.ResponseWriter, r *http.Request) string {
+	cookie, err := r.Cookie("admin_flash")
+	if err != nil { return "" }
+	// Clear the cookie after reading
+	http.SetCookie(w, &http.Cookie{
+		Name:   "admin_flash",
+		Value:  "",
+		Path:   "/admin",
+		MaxAge: -1,
+	})
+	return cookie.Value
 }
 
 func (reg *Registry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +140,7 @@ func (reg *Registry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		reg.Delete(res.Name, id)
 		reg.RecordAction(user, res.Name, id, "Delete", "Record deleted")
+		reg.setFlash(w, fmt.Sprintf("%s deleted successfully", res.Name))
 		http.Redirect(w, r, "/admin/"+res.Name, 303)
 	default: reg.renderList(res, w, r, user)
 	}

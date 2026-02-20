@@ -6,6 +6,19 @@
     <style>{{.CSS}}</style>
 </head>
 <body>
+    {{if .Flash}}
+    <div id="toast" class="toast">
+        {{.Flash}}
+    </div>
+    <script>
+        setTimeout(() => {
+            const t = document.getElementById('toast');
+            if (t) t.style.opacity = '0';
+            setTimeout(() => { if (t) t.remove(); }, 300);
+        }, 3000);
+    </script>
+    {{end}}
+
     <div class="sidebar">
         <h1>{{.SiteTitle}}</h1>
         
@@ -17,7 +30,6 @@
         <a href="/admin" class="nav-item">Dashboard</a>
         
         <div id="nav-groups" style="margin-top: 1rem;">
-            <!-- Render Resources -->
             {{range $group, $resList := .GroupedResources}}
                 <div class="nav-group" data-group-name="{{$group}}">
                     {{if ne $group "Default"}}
@@ -33,7 +45,6 @@
                 </div>
             {{end}}
 
-            <!-- Render Custom Pages -->
             {{range $group, $pageList := .GroupedPages}}
                 <div class="nav-group" data-group-name="{{$group}}">
                     {{if and (ne $group "Default") (not (index $.GroupedResources $group))}}

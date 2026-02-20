@@ -104,6 +104,12 @@ func main() {
 		RegisterField("Email", "Email Address", false).
 		RegisterField("Role", "User Role", false).
 		SetFieldType("Role", "select", roles...).
+		SetDecorator("Role", func(val interface{}) template.HTML {
+			role := val.(string)
+			color := "#64748b" // default
+			if role == "admin" { color = "#ef4444" } else if role == "editor" { color = "#3b82f6" }
+			return template.HTML(fmt.Sprintf(`<span style="background: %s; color: white; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">%s</span>`, color, role))
+		}).
 		AddMemberAction("activate", "Activate User", func(res *resource.Resource, w http.ResponseWriter, r *http.Request) {
 			id := r.URL.Query().Get("id")
 			fmt.Fprintf(w, "User %s has been activated! (Simulated)", id)
@@ -125,6 +131,10 @@ func main() {
 		RegisterField("Image", "Product Image", false).
 		SetFieldType("Price", "number").
 		SetFieldType("Image", "image").
+		SetDecorator("Price", func(val interface{}) template.HTML {
+			price := val.(float64)
+			return template.HTML(fmt.Sprintf("<strong>$%.2f</strong>", price))
+		}).
 		HasMany("ProductInfo", "Technical Specifications", "ProductInfo", "ProductID").
 		AddCollectionAction("discount", "Apply 10% Bulk Discount", func(res *resource.Resource, w http.ResponseWriter, r *http.Request) {
 			db.Model(&Product{}).Where("price > ?", 0).Update("price", gorm.Expr("price * 0.9"))

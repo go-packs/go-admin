@@ -45,6 +45,7 @@ func (reg *Registry) renderList(res *resource.Resource, w http.ResponseWriter, r
 		SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), 
 		CurrentResource: res, Fields: fields, Data: data, Filters: filters, User: user, CSS: template.CSS(styleContent),
 		Page: page, PerPage: perPage, TotalPages: totalPages, TotalCount: totalCount, HasPrev: page > 1, HasNext: page < totalPages, PrevPage: page - 1, NextPage: page + 1, Scopes: res.Scopes, CurrentScope: currentScope,
+		Flash: reg.getFlash(w, r),
 	}
 	tmpl.ExecuteTemplate(w, "index.html", pd)
 }
@@ -69,7 +70,7 @@ func (reg *Registry) renderShow(res *resource.Resource, item interface{}, w http
 	}
 	styleContent, _ := templateFS.ReadFile("templates/style.css")
 	tmpl := reg.loadTemplates("templates/show.html")
-	pd := PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData}
+	pd := PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData, Flash: reg.getFlash(w, r)}
 	tmpl.ExecuteTemplate(w, "show.html", pd)
 }
 
@@ -94,7 +95,7 @@ func (reg *Registry) renderForm(res *resource.Resource, item interface{}, w http
 	for _, f := range fields { if f.Searchable && f.SearchResource != "" { targetRes, _ := reg.GetResource(f.SearchResource); assocData[f.Name] = AssociationData{Resource: targetRes} } }
 	styleContent, _ := templateFS.ReadFile("templates/style.css")
 	tmpl := reg.loadTemplates("templates/form.html")
-	pd := PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData}
+	pd := PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData, Flash: reg.getFlash(w, r)}
 	tmpl.ExecuteTemplate(w, "form.html", pd)
 }
 
@@ -124,6 +125,7 @@ func (reg *Registry) handleSave(res *resource.Resource, w http.ResponseWriter, r
 	newID := fmt.Sprintf("%v", elem.FieldByName("ID").Interface())
 	act := "Create"; if isUpdate { act = "Update" }
 	reg.RecordAction(user, res.Name, newID, act, "Saved from form")
+	reg.setFlash(w, fmt.Sprintf("%s saved successfully", res.Name))
 	http.Redirect(w, r, "/admin/"+res.Name, 303)
 }
 

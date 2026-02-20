@@ -25,6 +25,7 @@ func (reg *Registry) renderDashboard(w http.ResponseWriter, r *http.Request, use
 	pd := PageData{
 		SiteTitle: reg.Config.SiteTitle, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), 
 		User: user, Stats: stats, CSS: template.CSS(styleContent), ChartData: widgets,
+		Flash: reg.getFlash(w, r),
 	}
 	tmpl.ExecuteTemplate(w, "dashboard.html", pd)
 }
@@ -38,6 +39,7 @@ func (reg *Registry) RenderCustomPage(w http.ResponseWriter, r *http.Request, ti
 	pd := PageData{
 		SiteTitle: reg.Config.SiteTitle, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(),
 		User: user, CSS: template.CSS(styleContent),
+		Flash: reg.getFlash(w, r),
 	}
 	tmpl.ExecuteTemplate(w, "layout", pd)
 }
