@@ -2,6 +2,7 @@ package admin
 
 import (
 	"embed"
+	"fmt"
 	"github.com/ajeet-kumar1087/go-admin/pkg/admin/models"
 	"github.com/ajeet-kumar1087/go-admin/pkg/admin/resource"
 	"html/template"
@@ -26,7 +27,7 @@ type PageData struct {
 	User             *models.AdminUser
 	Stats            []Stat
 	Error            string
-	Flash            string // Toast message
+	Flash            string
 	CSS              template.CSS
 	Page, PerPage    int
 	TotalPages       int
@@ -37,6 +38,9 @@ type PageData struct {
 	CurrentScope     string
 	Associations     map[string]AssociationData
 	ChartData        []ChartWidget
+	SortField        string
+	SortOrder        string
+	RenderedSidebars map[string]template.HTML
 }
 
 type ChartWidget struct {
@@ -58,24 +62,13 @@ type Stat struct {
 }
 
 func (reg *Registry) setFlash(w http.ResponseWriter, message string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:  "admin_flash",
-		Value: message,
-		Path:  "/admin",
-		HttpOnly: true,
-	})
+	http.SetCookie(w, &http.Cookie{Name: "admin_flash", Value: message, Path: "/admin", HttpOnly: true})
 }
 
 func (reg *Registry) getFlash(w http.ResponseWriter, r *http.Request) string {
 	cookie, err := r.Cookie("admin_flash")
 	if err != nil { return "" }
-	// Clear the cookie after reading
-	http.SetCookie(w, &http.Cookie{
-		Name:   "admin_flash",
-		Value:  "",
-		Path:   "/admin",
-		MaxAge: -1,
-	})
+	http.SetCookie(w, &http.Cookie{Name: "admin_flash", Value: "", Path: "/admin", MaxAge: -1})
 	return cookie.Value
 }
 

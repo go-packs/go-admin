@@ -258,3 +258,55 @@ tr:hover { background: #f8fafc; }
     font-weight: 500;
     transition: opacity 0.3s;
 }
+
+/* Contextual Sidebar */
+.content-wrapper {
+    display: flex;
+    gap: 2rem;
+}
+
+.content-main {
+    flex-grow: 1;
+}
+
+.content-sidebar {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.sidebar-widget {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.sidebar-widget-header {
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-widget-content {
+    padding: 1rem;
+    font-size: 0.875rem;
+}
+
+/* Sorting */
+.sort-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sort-link:hover {
+    color: var(--primary);
+}

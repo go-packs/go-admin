@@ -11,6 +11,7 @@ type ActionHandler func(res *Resource, w http.ResponseWriter, r *http.Request)
 type BatchActionHandler func(res *Resource, ids []string, w http.ResponseWriter, r *http.Request)
 type ScopeFunc func(db *gorm.DB) *gorm.DB
 type DecoratorFunc func(val interface{}) template.HTML
+type SidebarHandler func(res *Resource, item interface{}) template.HTML
 
 type Action struct {
 	Name, Label string
@@ -27,6 +28,11 @@ type Scope struct {
 	Handler     ScopeFunc
 }
 
+type Sidebar struct {
+	Label   string
+	Handler SidebarHandler
+}
+
 type Association struct {
 	Type, Name, ResourceName, ForeignKey, Label string
 }
@@ -38,6 +44,7 @@ type Field struct {
 	Searchable        bool
 	SearchResource    string
 	Decorator         DecoratorFunc
+	Sortable          bool // New flag
 }
 
 type Resource struct {
@@ -52,6 +59,7 @@ type Resource struct {
 	BatchActions      []BatchAction
 	Scopes            []Scope
 	Associations      []Association
+	Sidebars          []Sidebar
 	Attributes        map[string]interface{}
 }
 
@@ -64,17 +72,22 @@ func NewResource(model interface{}) *Resource {
 func (r *Resource) SetGroup(group string) *Resource { r.Group = group; return r }
 
 func (r *Resource) RegisterField(name string, label string, readonly bool) *Resource {
-	r.Fields = append(r.Fields, Field{Name: name, Label: label, Type: "text", Readonly: readonly})
+	r.Fields = append(r.Fields, Field{Name: name, Label: label, Type: "text", Readonly: readonly, Sortable: true})
+	return r
+}
+
+func (r *Resource) SetSortable(name string, sortable bool) *Resource {
+	for i, f := range r.Fields { if f.Name == name { r.Fields[i].Sortable = sortable; break } }
 	return r
 }
 
 func (r *Resource) SetDecorator(name string, fn DecoratorFunc) *Resource {
-	for i, f := range r.Fields {
-		if f.Name == name {
-			r.Fields[i].Decorator = fn
-			break
-		}
-	}
+	for i, f := range r.Fields { if f.Name == name { r.Fields[i].Decorator = fn; break } }
+	return r
+}
+
+func (r *Resource) AddSidebar(label string, handler SidebarHandler) *Resource {
+	r.Sidebars = append(r.Sidebars, Sidebar{Label: label, Handler: handler})
 	return r
 }
 

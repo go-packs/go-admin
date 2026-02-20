@@ -9,57 +9,62 @@
 {{end}}
 
 {{define "content"}}
-<div style="padding: 2rem;">
-    {{range .Fields}}
-    <div style="display: flex; border-bottom: 1px solid var(--border); padding: 1rem 0;">
-        <div style="width: 200px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">
-            {{.Label}}
-        </div>
-        <div style="flex-grow: 1; font-size: 0.875rem;">
-            {{$val := index $.Item .Name}}
-            {{if eq .Type "image"}}
-                {{if $val}}<img src="{{$val}}" style="max-height: 300px; border-radius: 0.5rem; border: 1px solid var(--border);">{{else}}-{{end}}
-            {{else if eq .Type "file"}}
-                {{if $val}}<a href="{{$val}}" target="_blank" class="btn" style="background: #f1f5f9;">Download File</a>{{else}}-{{end}}
-            {{else}}
-                {{$val}}
+<div class="content-wrapper">
+    <div class="content-main">
+        <div style="padding: 2rem;">
+            {{range .Fields}}
+            <div style="display: flex; border-bottom: 1px solid var(--border); padding: 1rem 0;">
+                <div style="width: 200px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">
+                    {{.Label}}
+                </div>
+                <div style="flex-grow: 1; font-size: 0.875rem;">
+                    {{$val := index $.Item .Name}}
+                    {{if eq .Type "image"}}
+                        {{if $val}}<img src="{{$val}}" style="max-height: 300px; border-radius: 0.5rem; border: 1px solid var(--border);">{{else}}-{{end}}
+                    {{else if eq .Type "file"}}
+                        {{if $val}}<a href="{{$val}}" target="_blank" class="btn" style="background: #f1f5f9;">Download File</a>{{else}}-{{end}}
+                    {{else}}
+                        {{$val}}
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+
+            <!-- Render HasMany Associations -->
+            {{range $name, $assoc := .Associations}}
+            <div style="margin-top: 3rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1rem; color: var(--text-main);">{{$assoc.Resource.Name}} ({{len $assoc.Items}})</h3>
+                    <a href="/admin/{{$assoc.Resource.Name}}/new" class="btn" style="font-size: 0.75rem; background: #f1f5f9;">+ New {{$assoc.Resource.Name}}</a>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>{{range $assoc.Fields}}<th>{{.Label}}</th>{{end}}<th style="text-align: right;">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {{range $assoc.Items}}
+                            <tr>{{$assocItem := .}}{{range $assoc.Fields}}<td>{{index $assocItem .Name}}</td>{{end}}<td style="text-align: right;"><a href="/admin/{{$assoc.Resource.Name}}/show?id={{index $assocItem "ID"}}" style="color: var(--primary); text-decoration: none; font-size: 0.8125rem;">View</a></td></tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {{end}}
         </div>
     </div>
-    {{end}}
 
-    <!-- Render HasMany Associations -->
-    {{range $name, $assoc := .Associations}}
-    <div style="margin-top: 3rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="font-size: 1rem; color: var(--text-main);">{{$assoc.Resource.Name}} ({{len $assoc.Items}})</h3>
-            <a href="/admin/{{$assoc.Resource.Name}}/new" class="btn" style="font-size: 0.75rem; background: #f1f5f9;">+ New {{$assoc.Resource.Name}}</a>
+    <!-- Render Sidebars -->
+    {{if .RenderedSidebars}}
+    <div class="content-sidebar" style="padding: 2rem;">
+        {{range $label, $html := .RenderedSidebars}}
+        <div class="sidebar-widget">
+            <div class="sidebar-widget-header">{{$label}}</div>
+            <div class="sidebar-widget-content">
+                {{$html}}
+            </div>
         </div>
-        <div class="card">
-            <table>
-                <thead>
-                    <tr>
-                        {{range $assoc.Fields}}
-                        <th>{{.Label}}</th>
-                        {{end}}
-                        <th style="text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range $assoc.Items}}
-                    <tr>
-                        {{$assocItem := .}}
-                        {{range $assoc.Fields}}
-                        <td>{{index $assocItem .Name}}</td>
-                        {{end}}
-                        <td style="text-align: right;">
-                            <a href="/admin/{{$assoc.Resource.Name}}/show?id={{index $assocItem "ID"}}" style="color: var(--primary); text-decoration: none; font-size: 0.8125rem;">View</a>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
+        {{end}}
     </div>
     {{end}}
 </div>

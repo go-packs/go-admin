@@ -34,7 +34,21 @@
                     <tr>
                         <th style="width: 40px;"><input type="checkbox" id="select-all"></th>
                         {{range .Fields}}
-                        <th>{{.Label}}</th>
+                        <th>
+                            {{if .Sortable}}
+                                <a href="?sort={{.Name}}&order={{if and (eq $.SortField .Name) (eq $.SortOrder "asc")}}desc{{else}}asc{{end}}&scope={{$.CurrentScope}}" class="sort-link">
+                                    {{.Label}}
+                                    {{if eq $.SortField .Name}}
+                                        {{if eq $.SortOrder "asc"}}↑{{else}}↓{{end}}
+                                    {{end}}
+                                </a>
+                            {{else}}
+                                <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-muted);">{{.Label}}</span>
+                            {{if eq $.SortField .Name}}
+                                {{if eq $.SortOrder "asc"}}↑{{else}}↓{{end}}
+                            {{end}}
+                            {{end}}
+                        </th>
                         {{end}}
                         <th style="text-align: right;">Actions</th>
                     </tr>
@@ -52,7 +66,7 @@
                             {{else if eq .Type "file"}}
                                 {{if $val}}<a href="{{$val}}" target="_blank">File</a>{{else}}-{{end}}
                             {{else}}
-                                {{index $item .Name}}
+                                {{$val}}
                             {{end}}
                         </td>
                         {{end}}
@@ -72,8 +86,8 @@
                 <span style="margin-left: 1rem;">Showing {{.Page}} of {{.TotalPages}} ({{.TotalCount}} records)</span>
             </div>
             <div class="pagination-links">
-                <a href="?page={{.PrevPage}}&scope={{.CurrentScope}}" class="page-link {{if not .HasPrev}}disabled{{end}}">&laquo; Previous</a>
-                <a href="?page={{.NextPage}}&scope={{.CurrentScope}}" class="page-link {{if not .HasNext}}disabled{{end}}">Next &raquo;</a>
+                <a href="?page={{.PrevPage}}&scope={{.CurrentScope}}&sort={{.SortField}}&order={{.SortOrder}}" class="page-link {{if not .HasPrev}}disabled{{end}}">&laquo; Previous</a>
+                <a href="?page={{.NextPage}}&scope={{.CurrentScope}}&sort={{.SortField}}&order={{.SortOrder}}" class="page-link {{if not .HasNext}}disabled{{end}}">Next &raquo;</a>
             </div>
         </div>
     </div>
@@ -83,25 +97,22 @@
         <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">Filters</h4>
         <form action="/admin/{{.CurrentResource.Name}}" method="GET">
             <input type="hidden" name="scope" value="{{.CurrentScope}}">
+            <input type="hidden" name="sort" value="{{.SortField}}">
+            <input type="hidden" name="order" value="{{.SortOrder}}">
             {{range .CurrentResource.Fields}}
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">{{.Label}}</label>
-                
                 {{if eq .Type "number"}}
                     <div style="display: flex; gap: 0.5rem;">
-                        <input type="number" name="min_{{.Name}}" value="{{index $.Filters (printf "min_%s" .Name)}}" placeholder="Min"
-                               style="width: 50%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
-                        <input type="number" name="max_{{.Name}}" value="{{index $.Filters (printf "max_%s" .Name)}}" placeholder="Max"
-                               style="width: 50%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
+                        <input type="number" name="min_{{.Name}}" value="{{index $.Filters (printf "min_%s" .Name)}}" placeholder="Min" style="width: 50%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
+                        <input type="number" name="max_{{.Name}}" value="{{index $.Filters (printf "max_%s" .Name)}}" placeholder="Max" style="width: 50%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
                     </div>
                 {{else}}
-                    <input type="text" name="q_{{.Name}}" value="{{index $.Filters (printf "q_%s" .Name)}}" placeholder="Contains..."
-                           style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
+                    <input type="text" name="q_{{.Name}}" value="{{index $.Filters (printf "q_%s" .Name)}}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.75rem;">
                 {{end}}
             </div>
             {{end}}
             <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 0.75rem;">Apply Filters</button>
-            <a href="/admin/{{.CurrentResource.Name}}" style="display: block; text-align: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-decoration: none;">Clear</a>
         </form>
     </div>
 </div>
@@ -111,21 +122,16 @@
     const itemCheckboxes = document.querySelectorAll('.item-checkbox');
     const batchBar = document.getElementById('batch-actions-bar');
     const selectedCount = document.getElementById('selected-count');
-
     function updateBatchBar() {
         const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
         selectedCount.textContent = checkedCount;
         batchBar.style.display = checkedCount > 0 ? 'flex' : 'none';
     }
-
     selectAll.addEventListener('change', (e) => {
         itemCheckboxes.forEach(cb => cb.checked = e.target.checked);
         updateBatchBar();
     });
-
-    itemCheckboxes.forEach(cb => {
-        cb.addEventListener('change', updateBatchBar);
-    });
+    itemCheckboxes.forEach(cb => { cb.addEventListener('change', updateBatchBar); });
 </script>
 {{end}}
 {{template "layout" .}}

@@ -24,10 +24,22 @@ func (reg *Registry) renderList(res *resource.Resource, w http.ResponseWriter, r
 	page, _ := strconv.Atoi(r.URL.Query().Get("page")); if page < 1 { page = 1 }
 	perPage := reg.Config.DefaultPerPage
 	currentScope := r.URL.Query().Get("scope")
+	
 	query := reg.DB.Model(res.Model)
 	if currentScope != "" {
 		for _, s := range res.Scopes { if s.Name == currentScope { query = s.Handler(query); break } }
 	}
+
+	// Sorting
+	sortField := r.URL.Query().Get("sort")
+	sortOrder := r.URL.Query().Get("order")
+	if sortField != "" {
+		if sortOrder != "desc" { sortOrder = "asc" }
+		query = query.Order(fmt.Sprintf("%s %s", sortField, sortOrder))
+	} else {
+		query = query.Order("id desc") // Default sort
+	}
+
 	filters := make(map[string]string)
 	for k, v := range r.URL.Query() {
 		val := v[0]; if val == "" { continue }; filters[k] = val
@@ -46,6 +58,7 @@ func (reg *Registry) renderList(res *resource.Resource, w http.ResponseWriter, r
 		CurrentResource: res, Fields: fields, Data: data, Filters: filters, User: user, CSS: template.CSS(styleContent),
 		Page: page, PerPage: perPage, TotalPages: totalPages, TotalCount: totalCount, HasPrev: page > 1, HasNext: page < totalPages, PrevPage: page - 1, NextPage: page + 1, Scopes: res.Scopes, CurrentScope: currentScope,
 		Flash: reg.getFlash(w, r),
+		SortField: sortField, SortOrder: sortOrder,
 	}
 	tmpl.ExecuteTemplate(w, "index.html", pd)
 }
@@ -55,6 +68,8 @@ func (reg *Registry) renderShow(res *resource.Resource, item interface{}, w http
 	fields := res.GetFieldsFor("show")
 	var itemMap map[string]interface{}
 	assocData := make(map[string]AssociationData)
+	renderedSidebars := make(map[string]template.HTML)
+
 	if item != nil {
 		itemMap = reg.itemToMap(res, fields, reflect.ValueOf(item))
 		for _, assoc := range res.Associations {
@@ -67,10 +82,19 @@ func (reg *Registry) renderShow(res *resource.Resource, item interface{}, w http
 				assocData[assoc.Name] = AssociationData{Resource: targetRes, Fields: targetFields, Items: reg.sliceToMap(targetRes, targetFields, dest.Elem())}
 			}
 		}
+		// Render sidebars
+		for _, sb := range res.Sidebars {
+			renderedSidebars[sb.Label] = sb.Handler(res, item)
+		}
 	}
+
 	styleContent, _ := templateFS.ReadFile("templates/style.css")
 	tmpl := reg.loadTemplates("templates/show.html")
-	pd := PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData, Flash: reg.getFlash(w, r)}
+	pd := PageData{
+		SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.getGroupedResources(), GroupedPages: reg.getGroupedPages(), 
+		CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData, 
+		Flash: reg.getFlash(w, r), RenderedSidebars: renderedSidebars,
+	}
 	tmpl.ExecuteTemplate(w, "show.html", pd)
 }
 
