@@ -2,9 +2,9 @@ package admin
 
 import (
 	"fmt"
-	"github.com/ajeet-kumar1087/go-admin/config"
-	"github.com/ajeet-kumar1087/go-admin/models"
-	"github.com/ajeet-kumar1087/go-admin/resource"
+	"github.com/go-packs/go-admin/config"
+	"github.com/go-packs/go-admin/models"
+	"github.com/go-packs/go-admin/resource"
 	"gorm.io/gorm"
 	"net/http"
 	"time"

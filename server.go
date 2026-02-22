@@ -3,8 +3,8 @@ package admin
 import (
 	"embed"
 	"fmt"
-	"github.com/ajeet-kumar1087/go-admin/models"
-	"github.com/ajeet-kumar1087/go-admin/resource"
+	"github.com/go-packs/go-admin/models"
+	"github.com/go-packs/go-admin/resource"
 	"html/template"
 	"net/http"
 	"path/filepath"

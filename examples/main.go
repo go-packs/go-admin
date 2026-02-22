@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ajeet-kumar1087/go-admin"
+	"github.com/go-packs/go-admin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"html/template"

@@ -2,7 +2,7 @@ package admin
 
 import (
 	"fmt"
-	"github.com/ajeet-kumar1087/go-admin/models"
+	"github.com/go-packs/go-admin/models"
 	"html/template"
 	"net/http"
 )

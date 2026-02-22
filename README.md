@@ -20,7 +20,7 @@ Go Admin uses reflection and GORM to automatically generate a professional-grade
 ## Installation
 
 ```bash
-go get github.com/ajeet-kumar1087/go-admin
+go get github.com/go-packs/go-admin
 ```
 
 ## Quick Start
@@ -29,7 +29,7 @@ go get github.com/ajeet-kumar1087/go-admin
 package main
 
 import (
-    "github.com/ajeet-kumar1087/go-admin" // Single user-friendly import
+    "github.com/go-packs/go-admin" // Single user-friendly import
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
     "net/http"

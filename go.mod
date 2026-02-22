@@ -1,4 +1,4 @@
-module github.com/ajeet-kumar1087/go-admin
+module github.com/go-packs/go-admin
 
 go 1.25.7
 
