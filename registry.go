@@ -1,14 +1,17 @@
 package admin
 
 import (
+	"embed"
 	"fmt"
 	"github.com/go-packs/go-admin/config"
 	"github.com/go-packs/go-admin/models"
 	"github.com/go-packs/go-admin/resource"
 	"gorm.io/gorm"
 	"net/http"
-	"time"
 )
+
+//go:embed templates/*
+var TemplateFS embed.FS
 
 // Public Type Aliases
 type Resource = resource.Resource
@@ -78,7 +81,7 @@ func (reg *Registry) ResourceNames() []string {
 	return names
 }
 
-func (reg *Registry) getGroupedResources() map[string][]*resource.Resource {
+func (reg *Registry) GetGroupedResources() map[string][]*resource.Resource {
 	groups := make(map[string][]*resource.Resource)
 	for _, r := range reg.Resources {
 		g := r.Group; if g == "" { g = "Default" }; groups[g] = append(groups[g], r)
@@ -86,7 +89,7 @@ func (reg *Registry) getGroupedResources() map[string][]*resource.Resource {
 	return groups
 }
 
-func (reg *Registry) getGroupedPages() map[string][]*Page {
+func (reg *Registry) GetGroupedPages() map[string][]*Page {
 	groups := make(map[string][]*Page)
 	for _, p := range reg.Pages {
 		g := p.Group; if g == "" { g = "Default" }; groups[g] = append(groups[g], p)
@@ -94,9 +97,13 @@ func (reg *Registry) getGroupedPages() map[string][]*Page {
 	return groups
 }
 
-func (reg *Registry) RecordAction(user *models.AdminUser, resName, recordID, action, changes string) {
-	reg.DB.Create(&models.AuditLog{
-		UserID: user.ID, UserEmail: user.Email, ResourceName: resName, 
-		RecordID: recordID, Action: action, Changes: changes, CreatedAt: time.Now(),
-	})
+func (reg *Registry) SetFlash(w http.ResponseWriter, message string) {
+	http.SetCookie(w, &http.Cookie{Name: "admin_flash", Value: message, Path: "/admin", HttpOnly: true})
+}
+
+func (reg *Registry) GetFlash(w http.ResponseWriter, r *http.Request) string {
+	cookie, err := r.Cookie("admin_flash")
+	if err != nil { return "" }
+	http.SetCookie(w, &http.Cookie{Name: "admin_flash", Value: "", Path: "/admin", MaxAge: -1})
+	return cookie.Value
 }

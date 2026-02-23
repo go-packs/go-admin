@@ -1,10 +1,11 @@
-package admin
+package internal
 
 import (
+	"github.com/go-packs/go-admin"
 	"reflect"
 )
 
-func (reg *Registry) List(resourceName string) (interface{}, error) {
+func List(reg *admin.Registry, resourceName string) (interface{}, error) {
 	res, ok := reg.GetResource(resourceName)
 	if !ok { return nil, nil }
 	modelType := reflect.TypeOf(res.Model)
@@ -13,11 +14,11 @@ func (reg *Registry) List(resourceName string) (interface{}, error) {
 	return dest.Elem().Interface(), err
 }
 
-func (reg *Registry) Create(resourceName string, data interface{}) error {
+func Create(reg *admin.Registry, data interface{}) error {
 	return reg.DB.Create(data).Error
 }
 
-func (reg *Registry) Get(resourceName string, id interface{}) (interface{}, error) {
+func Get(reg *admin.Registry, resourceName string, id interface{}) (interface{}, error) {
 	res, ok := reg.GetResource(resourceName)
 	if !ok { return nil, nil }
 	model := reflect.New(reflect.TypeOf(res.Model)).Interface()
@@ -25,11 +26,11 @@ func (reg *Registry) Get(resourceName string, id interface{}) (interface{}, erro
 	return model, err
 }
 
-func (reg *Registry) Update(resourceName string, data interface{}) error {
+func Update(reg *admin.Registry, data interface{}) error {
 	return reg.DB.Save(data).Error
 }
 
-func (reg *Registry) Delete(resourceName string, id interface{}) error {
+func Delete(reg *admin.Registry, resourceName string, id interface{}) error {
 	res, ok := reg.GetResource(resourceName)
 	if !ok { return nil }
 	model := reflect.New(reflect.TypeOf(res.Model)).Interface()

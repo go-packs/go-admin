@@ -29,10 +29,12 @@ go get github.com/go-packs/go-admin
 package main
 
 import (
-    "github.com/go-packs/go-admin" // Single user-friendly import
+    "github.com/go-packs/go-admin"
+    "github.com/go-packs/go-admin/server" // Import the server package for routing
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
     "net/http"
+    "log"
 )
 
 type Product struct {
@@ -55,10 +57,46 @@ func main() {
         RegisterField("Name", "Product Name", false).
         RegisterField("Price", "Price", false)
 
-    // Start Server
-    http.Handle("/admin/", adm)
+    // Start Server using the modular router
+    log.Println("🚀 Admin panel starting on http://localhost:8080/admin")
+    http.Handle("/admin/", server.NewRouter(adm))
     http.ListenAndServe(":8080", nil)
 }
+```
+
+## Architecture & Project Structure
+
+The project follows a modular architecture designed for maintainability and separation of concerns:
+
+- `cmd/`: CLI tool for scaffolding and boilerplate generation.
+- `config/`: Configuration management and defaults.
+- `models/`: Core GORM models for users, sessions, and logs.
+- `resource/`: Metadata definitions for administrative resources.
+- `handlers/`: HTTP request handlers (Auth, CRUD, Export, etc.).
+- `view/`: Template rendering and view logic.
+- `server/`: Routing logic and HTTP middleware.
+- `internal/`: Core business logic (Auth rules, Audit logging, CRUD services).
+- `templates/`: HTML and CSS templates bundled via `go:embed`.
+
+## Development
+
+### Quality Control
+
+We use `golangci-lint` for linting and `pre-commit` for local quality checks.
+
+**Install pre-commit hooks:**
+```bash
+pre-commit install
+```
+
+**Run Linters:**
+```bash
+golangci-lint run
+```
+
+**Run Tests:**
+```bash
+go test ./...
 ```
 
 ## Documentation

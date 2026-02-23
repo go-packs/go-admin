@@ -17,6 +17,7 @@ const mainTemplate = `package main
 
 import (
 	"github.com/go-packs/go-admin"
+	"github.com/go-packs/go-admin/server"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
@@ -33,7 +34,7 @@ func main() {
 	adm.SetConfig(conf)
 
 	log.Println("🚀 Admin panel starting on http://localhost:8080/admin")
-	http.Handle("/admin/", adm)
+	http.Handle("/admin/", server.NewRouter(adm))
 	http.ListenAndServe(":8080", nil)
 }
 `

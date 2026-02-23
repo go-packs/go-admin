@@ -100,14 +100,24 @@ func (r *Resource) SetEditFields(n ...string) *Resource { r.EditFields = n; retu
 func (r *Resource) GetFieldsFor(view string) []Field {
 	var names []string
 	switch view {
-	case "index": names = r.IndexFields
-	case "show": names = r.ShowFields
-	case "edit": names = r.EditFields
+	case "index":
+		names = r.IndexFields
+	case "show":
+		names = r.ShowFields
+	case "edit", "new":
+		names = r.EditFields
 	}
-	if len(names) == 0 { return r.Fields }
+	if len(names) == 0 {
+		return r.Fields
+	}
 	var result []Field
 	for _, name := range names {
-		for _, f := range r.Fields { if f.Name == name { result = append(result, f); break } }
+		for _, f := range r.Fields {
+			if f.Name == name {
+				result = append(result, f)
+				break
+			}
+		}
 	}
 	return result
 }

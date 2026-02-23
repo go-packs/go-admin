@@ -1,0 +1,25 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - staticcheck
+    - unused
+    - revive
+    - gofmt
+    - misspell
+    - ineffassign
+
+revive:
+  rules:
+    - name: exported
+      disabled: true # Many internal funcs are exported for package access but might not have docs yet
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

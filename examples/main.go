@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/go-packs/go-admin"
+	"github.com/go-packs/go-admin/server"
+	"github.com/go-packs/go-admin/view"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"html/template"
@@ -115,7 +117,7 @@ func main() {
 	// Custom Pages
 	adm.AddPage("SystemStatus", "Administration", func(w http.ResponseWriter, r *http.Request) {
 		content := template.HTML(`<div style="background: white; border-radius: 0.5rem; overflow: hidden;"><table style="width: 100%; border-collapse: collapse;"><tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 1rem; font-weight: 600;">Server Status</td><td style="padding: 1rem; color: #10b981;">Online</td></tr></table></div>`)
-		adm.RenderCustomPage(w, r, "System Status", content)
+		view.RenderCustomPage(adm, w, r, "System Status", content)
 	})
 
 	// Seed Data
@@ -131,6 +133,6 @@ func main() {
 	}
 
 	fmt.Printf("\n🚀 Admin running at http://localhost:8080/admin\n")
-	http.Handle("/admin/", adm)
+	http.Handle("/admin/", server.NewRouter(adm))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
