@@ -24,7 +24,7 @@ default_per_page: 10
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer os.Remove("test_config.yml")
+		defer func() { _ = os.Remove("test_config.yml") }()
 
 		c, err := LoadConfig("test_config.yml")
 		if err != nil {

@@ -1,8 +1,10 @@
+// Package config handles loading and defaulting of admin configuration.
 package config
 
 import (
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Config holds the configuration for the admin panel.
@@ -34,7 +36,11 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return config, err
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			// ignore close error
+		}
+	}()
 
 	d := yaml.NewDecoder(file)
 	if err := d.Decode(&config); err != nil {

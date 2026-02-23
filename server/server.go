@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/go-packs/go-admin"
 	"net/http"
+
+	"github.com/go-packs/go-admin"
 )
 
 type Server struct {
@@ -17,9 +18,9 @@ func NewServer(reg *admin.Registry, addr string) *Server {
 func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	mux.Handle("/admin/", NewRouter(s.Registry))
-	
+
 	handler := Logger(mux)
 	handler = Recovery(handler)
-	
+
 	return http.ListenAndServe(s.Addr, handler)
 }

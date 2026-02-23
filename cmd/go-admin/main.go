@@ -63,11 +63,15 @@ func main() {
 
 func handleInit() {
 	fmt.Println("Creating main.go...")
-	os.WriteFile("main.go", []byte(mainTemplate), 0644)
-	
+	if err := os.WriteFile("main.go", []byte(mainTemplate), 0644); err != nil {
+		fmt.Printf("write main.go: %v\n", err)
+	}
+
 	fmt.Println("Creating admin.yml...")
-	os.WriteFile("admin.yml", []byte("site_title: \"My Admin\"\ndefault_per_page: 10\n"), 0644)
-	
+	if err := os.WriteFile("admin.yml", []byte("site_title: \"My Admin\"\ndefault_per_page: 10\n"), 0644); err != nil {
+		fmt.Printf("write admin.yml: %v\n", err)
+	}
+
 	fmt.Println("✅ Done! Run 'go mod init' and 'go mod tidy' to start.")
 }
 

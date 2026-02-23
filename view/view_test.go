@@ -1,9 +1,10 @@
 package view
 
 import (
-	"github.com/go-packs/go-admin/resource"
 	"reflect"
 	"testing"
+
+	"github.com/go-packs/go-admin/resource"
 )
 
 type TestItem struct {

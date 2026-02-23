@@ -1,11 +1,12 @@
 package internal
 
 import (
+	"testing"
+
 	"github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"testing"
 )
 
 type MockModel struct {
@@ -14,8 +15,13 @@ type MockModel struct {
 }
 
 func setupTestDB() (*gorm.DB, *admin.Registry) {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.AdminUser{}, &models.Permission{}, &models.AuditLog{}, &MockModel{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	if err := db.AutoMigrate(&models.AdminUser{}, &models.Permission{}, &models.AuditLog{}, &MockModel{}); err != nil {
+		panic(err)
+	}
 	reg := admin.NewRegistry(db)
 	return db, reg
 }
@@ -81,7 +87,7 @@ func TestCRUDLogic(t *testing.T) {
 		if err := Delete(reg, "MockModel", item.ID); err != nil {
 			t.Fatalf("Delete failed: %v", err)
 		}
-		
+
 		listAfter, _ := List(reg, "MockModel")
 		if len(listAfter.([]MockModel)) != 0 {
 			t.Error("Delete did not remove item")

@@ -1,13 +1,14 @@
 package server
 
 import (
+	"net/http"
+	"path/filepath"
+	"strings"
+
 	"github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/handlers"
 	"github.com/go-packs/go-admin/internal"
 	"github.com/go-packs/go-admin/view"
-	"net/http"
-	"path/filepath"
-	"strings"
 )
 
 func NewRouter(reg *admin.Registry) http.Handler {
@@ -92,8 +93,8 @@ func routeMain(reg *admin.Registry, w http.ResponseWriter, r *http.Request, upat
 	}
 
 	// Permission Check
-	if !internal.IsAllowed(reg, role, resourceName, action) && 
-	   action != "export" && !strings.Contains(action, "action") {
+	if !internal.IsAllowed(reg, role, resourceName, action) &&
+		action != "export" && !strings.Contains(action, "action") {
 		http.Error(w, "Forbidden", 403)
 		return
 	}

@@ -1,10 +1,11 @@
 package view
 
 import (
-	"github.com/go-packs/go-admin"
-	"github.com/go-packs/go-admin/internal"
 	"html/template"
 	"net/http"
+
+	"github.com/go-packs/go-admin"
+	"github.com/go-packs/go-admin/internal"
 )
 
 func RenderCustomPage(reg *admin.Registry, w http.ResponseWriter, r *http.Request, title string, content template.HTML) {
@@ -18,5 +19,8 @@ func RenderCustomPage(reg *admin.Registry, w http.ResponseWriter, r *http.Reques
 		User: user, CSS: template.CSS(styleContent),
 		Flash: reg.GetFlash(w, r),
 	}
-	tmpl.ExecuteTemplate(w, "layout", pd)
+	if err := tmpl.ExecuteTemplate(w, "layout", pd); err != nil {
+		http.Error(w, "Template error", 500)
+		return
+	}
 }

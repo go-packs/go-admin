@@ -1,18 +1,24 @@
 package server
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func setupTestDB() (*gorm.DB, *admin.Registry) {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.AdminUser{}, &models.Session{}, &models.Permission{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	if err := db.AutoMigrate(&models.AdminUser{}, &models.Session{}, &models.Permission{}); err != nil {
+		panic(err)
+	}
 	reg := admin.NewRegistry(db)
 	return db, reg
 }

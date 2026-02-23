@@ -1,20 +1,26 @@
 package handlers
 
 import (
-	"github.com/go-packs/go-admin"
-	"github.com/go-packs/go-admin/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/go-packs/go-admin"
+	"github.com/go-packs/go-admin/models"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func setupTestDB() (*gorm.DB, *admin.Registry) {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.AdminUser{}, &models.Session{}, &models.Permission{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	if err := db.AutoMigrate(&models.AdminUser{}, &models.Session{}, &models.Permission{}); err != nil {
+		panic(err)
+	}
 	reg := admin.NewRegistry(db)
 	return db, reg
 }
@@ -24,8 +30,12 @@ func TestAuthHandlers(t *testing.T) {
 
 	t.Run("LoginSuccess", func(t *testing.T) {
 		user := &models.AdminUser{Email: "test@example.com"}
-		user.SetPassword("password123")
-		db.Create(user)
+		if err := user.SetPassword("password123"); err != nil {
+			t.Fatalf("set password: %v", err)
+		}
+		if err := db.Create(user).Error; err != nil {
+			t.Fatalf("create user: %v", err)
+		}
 
 		data := url.Values{}
 		data.Set("email", "test@example.com")

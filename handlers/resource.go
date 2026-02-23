@@ -2,11 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/go-packs/go-admin"
-	"github.com/go-packs/go-admin/internal"
-	"github.com/go-packs/go-admin/models"
-	"github.com/go-packs/go-admin/resource"
-	"github.com/go-packs/go-admin/view"
 	"html/template"
 	"io"
 	"math"
@@ -17,49 +12,86 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-packs/go-admin"
+	"github.com/go-packs/go-admin/internal"
+	"github.com/go-packs/go-admin/models"
+	"github.com/go-packs/go-admin/resource"
+	"github.com/go-packs/go-admin/view"
 )
 
+// RenderList renders the index (list) view for a given resource.
 func RenderList(reg *admin.Registry, res *resource.Resource, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fields := res.GetFieldsFor("index")
-	page, _ := strconv.Atoi(r.URL.Query().Get("page")); if page < 1 { page = 1 }
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
 	perPage := reg.Config.DefaultPerPage
 	currentScope := r.URL.Query().Get("scope")
 	query := reg.DB.Model(res.Model)
 	if currentScope != "" {
-		for _, s := range res.Scopes { if s.Name == currentScope { query = s.Handler(query); break } }
+		for _, s := range res.Scopes {
+			if s.Name == currentScope {
+				query = s.Handler(query)
+				break
+			}
+		}
 	}
 	sortField, sortOrder := r.URL.Query().Get("sort"), r.URL.Query().Get("order")
-	if sortField != "" { if sortOrder != "desc" { sortOrder = "asc" }; query = query.Order(fmt.Sprintf("%s %s", sortField, sortOrder)) } else { query = query.Order("id desc") }
+	if sortField != "" {
+		if sortOrder != "desc" {
+			sortOrder = "asc"
+		}
+		query = query.Order(fmt.Sprintf("%s %s", sortField, sortOrder))
+	} else {
+		query = query.Order("id desc")
+	}
 	filters := make(map[string]string)
 	for k, v := range r.URL.Query() {
-		val := v[0]; if val == "" { continue }; filters[k] = val
-		if strings.HasPrefix(k, "q_") { query = query.Where(fmt.Sprintf("%s LIKE ?", strings.TrimPrefix(k, "q_")), "%"+val+"%") } else if strings.HasPrefix(k, "min_") { query = query.Where(fmt.Sprintf("%s >= ?", strings.TrimPrefix(k, "min_")), val) } else if strings.HasPrefix(k, "max_") { query = query.Where(fmt.Sprintf("%s <= ?", strings.TrimPrefix(k, "max_")), val) }
+		val := v[0]
+		if val == "" {
+			continue
+		}
+		filters[k] = val
+		if strings.HasPrefix(k, "q_") {
+			query = query.Where(fmt.Sprintf("%s LIKE ?", strings.TrimPrefix(k, "q_")), "%"+val+"%")
+		} else if strings.HasPrefix(k, "min_") {
+			query = query.Where(fmt.Sprintf("%s >= ?", strings.TrimPrefix(k, "min_")), val)
+		} else if strings.HasPrefix(k, "max_") {
+			query = query.Where(fmt.Sprintf("%s <= ?", strings.TrimPrefix(k, "max_")), val)
+		}
 	}
-	var totalCount int64; query.Count(&totalCount)
+	var totalCount int64
+	query.Count(&totalCount)
 	totalPages := int(math.Ceil(float64(totalCount) / float64(perPage)))
 	modelType := reflect.TypeOf(res.Model)
-	destSlice := reflect.MakeSlice(reflect.SliceOf(modelType), 0, 0); dest := reflect.New(destSlice.Type())
+	destSlice := reflect.MakeSlice(reflect.SliceOf(modelType), 0, 0)
+	dest := reflect.New(destSlice.Type())
 	query.Offset((page - 1) * perPage).Limit(perPage).Find(dest.Interface())
 	data := view.SliceToMap(res, fields, dest.Elem())
 	styleContent, _ := admin.TemplateFS.ReadFile("templates/style.css")
 	tmpl := view.LoadTemplates("templates/index.html")
 	pd := view.PageData{
-		SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.GetGroupedResources(), GroupedPages: reg.GetGroupedPages(), 
+		SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.GetGroupedResources(), GroupedPages: reg.GetGroupedPages(),
 		CurrentResource: res, Fields: fields, Data: data, Filters: filters, User: user, CSS: template.CSS(styleContent),
 		Page: page, PerPage: perPage, TotalPages: totalPages, TotalCount: totalCount, HasPrev: page > 1, HasNext: page < totalPages, PrevPage: page - 1, NextPage: page + 1, Scopes: res.Scopes, CurrentScope: currentScope,
 		Flash: reg.GetFlash(w, r), SortField: sortField, SortOrder: sortOrder,
 	}
 	if err := tmpl.ExecuteTemplate(w, "index.html", pd); err != nil {
-		fmt.Printf("Template error: %v\n", err)
+		http.Error(w, "Template error", 500)
+		return
 	}
 }
 
+// RenderShow renders the detail view for a single resource record.
 func RenderShow(reg *admin.Registry, res *resource.Resource, item interface{}, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fields := res.GetFieldsFor("show")
 	var itemMap map[string]interface{}
-	assocData := make(map[string]*view.AssociationData); renderedSidebars := make(map[string]template.HTML)
+	assocData := make(map[string]*view.AssociationData)
+	renderedSidebars := make(map[string]template.HTML)
 	if item != nil {
 		itemMap = view.ItemToMap(res, fields, reflect.ValueOf(item))
 		for _, assoc := range res.Associations {
@@ -67,56 +99,76 @@ func RenderShow(reg *admin.Registry, res *resource.Resource, item interface{}, w
 				targetRes, _ := reg.GetResource(assoc.ResourceName)
 				targetFields := targetRes.GetFieldsFor("index")
 				modelType := reflect.TypeOf(targetRes.Model)
-				destSlice := reflect.MakeSlice(reflect.SliceOf(modelType), 0, 0); dest := reflect.New(destSlice.Type())
+				destSlice := reflect.MakeSlice(reflect.SliceOf(modelType), 0, 0)
+				dest := reflect.New(destSlice.Type())
 				reg.DB.Where(fmt.Sprintf("%s = ?", assoc.ForeignKey), itemMap["ID"]).Find(dest.Interface())
 				assocData[assoc.Name] = &view.AssociationData{Resource: targetRes, Fields: targetFields, Items: view.SliceToMap(targetRes, targetFields, dest.Elem())}
 			}
 		}
-		for _, sb := range res.Sidebars { renderedSidebars[sb.Label] = sb.Handler(res, item) }
+		for _, sb := range res.Sidebars {
+			renderedSidebars[sb.Label] = sb.Handler(res, item)
+		}
 	}
 	styleContent, _ := admin.TemplateFS.ReadFile("templates/style.css")
 	tmpl := view.LoadTemplates("templates/show.html")
 	pd := view.PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.GetGroupedResources(), GroupedPages: reg.GetGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData, Flash: reg.GetFlash(w, r), RenderedSidebars: renderedSidebars}
 	if err := tmpl.ExecuteTemplate(w, "show.html", pd); err != nil {
-		fmt.Printf("Template error: %v\n", err)
+		http.Error(w, "Template error", 500)
+		return
 	}
 }
 
+// RenderForm renders the new/edit form for a resource.
 func RenderForm(reg *admin.Registry, res *resource.Resource, item interface{}, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	
+
 	viewType := "edit"
 	if item == nil {
 		viewType = "new"
 	}
 	fields := res.GetFieldsFor(viewType)
-	
+
 	var itemMap map[string]interface{}
-	if item != nil { itemMap = view.ItemToMap(res, fields, reflect.ValueOf(item)) }
+	if item != nil {
+		itemMap = view.ItemToMap(res, fields, reflect.ValueOf(item))
+	}
 	assocData := make(map[string]*view.AssociationData)
 	for _, assoc := range res.Associations {
 		if assoc.Type == "BelongsTo" {
 			targetRes, _ := reg.GetResource(assoc.ResourceName)
-			var count int64; reg.DB.Model(targetRes.Model).Count(&count)
+			var count int64
+			reg.DB.Model(targetRes.Model).Count(&count)
 			if count < reg.Config.SearchThreshold {
 				modelType := reflect.TypeOf(targetRes.Model)
-				destSlice := reflect.MakeSlice(reflect.SliceOf(modelType), 0, 0); dest := reflect.New(destSlice.Type())
+				destSlice := reflect.MakeSlice(reflect.SliceOf(modelType), 0, 0)
+				dest := reflect.New(destSlice.Type())
 				reg.DB.Find(dest.Interface())
 				assocData[assoc.Name] = &view.AssociationData{Resource: targetRes, Options: view.SliceToMap(targetRes, targetRes.Fields, dest.Elem())}
-			} else { assocData[assoc.Name] = &view.AssociationData{Resource: targetRes} }
+			} else {
+				assocData[assoc.Name] = &view.AssociationData{Resource: targetRes}
+			}
 		}
 	}
-	for _, f := range fields { if f.Searchable && f.SearchResource != "" { targetRes, _ := reg.GetResource(f.SearchResource); assocData[f.Name] = &view.AssociationData{Resource: targetRes} } }
+	for _, f := range fields {
+		if f.Searchable && f.SearchResource != "" {
+			targetRes, _ := reg.GetResource(f.SearchResource)
+			assocData[f.Name] = &view.AssociationData{Resource: targetRes}
+		}
+	}
 	styleContent, _ := admin.TemplateFS.ReadFile("templates/style.css")
 	tmpl := view.LoadTemplates("templates/form.html")
 	pd := view.PageData{SiteTitle: reg.Config.SiteTitle, Resources: reg.Resources, GroupedResources: reg.GetGroupedResources(), GroupedPages: reg.GetGroupedPages(), CurrentResource: res, Fields: fields, Item: itemMap, User: user, CSS: template.CSS(styleContent), Associations: assocData, Flash: reg.GetFlash(w, r)}
 	if err := tmpl.ExecuteTemplate(w, "form.html", pd); err != nil {
-		fmt.Printf("Template error: %v\n", err)
+		http.Error(w, "Template error", 500)
+		return
 	}
 }
 
+// HandleSave processes form submissions to create or update resource records.
 func HandleSave(reg *admin.Registry, res *resource.Resource, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
-	r.ParseMultipartForm(32 << 20)
+	if err := r.ParseMultipartForm(32 << 20); err != nil && err != http.ErrNotMultipart {
+		// non-fatal; continue without multipart data
+	}
 	model := reflect.New(reflect.TypeOf(res.Model)).Interface()
 	isUpdate, id := false, r.FormValue("ID")
 	if id != "" && id != "0" {
@@ -151,13 +203,29 @@ func HandleSave(reg *admin.Registry, res *resource.Resource, w http.ResponseWrit
 		if f.Type == "image" || f.Type == "file" {
 			file, header, err := r.FormFile(f.Name)
 			if err == nil {
-				defer file.Close()
-				os.MkdirAll(reg.Config.UploadDir, 0755)
+				defer func() {
+					if cerr := file.Close(); cerr != nil {
+						fmt.Printf("file close error: %v\n", cerr)
+					}
+				}()
+				if err := os.MkdirAll(reg.Config.UploadDir, 0755); err != nil {
+					fmt.Printf("mkdir error: %v\n", err)
+				}
 				newName := fmt.Sprintf("%d%s", time.Now().UnixNano(), filepath.Ext(header.Filename))
-				dst, _ := os.Create(filepath.Join(reg.Config.UploadDir, newName))
-				defer dst.Close()
-				io.Copy(dst, file)
-				field.SetString("/admin/uploads/" + newName)
+				dst, derr := os.Create(filepath.Join(reg.Config.UploadDir, newName))
+				if derr != nil {
+					fmt.Printf("create file error: %v\n", derr)
+				} else {
+					defer func() {
+						if derr := dst.Close(); derr != nil {
+							fmt.Printf("dst close error: %v\n", derr)
+						}
+					}()
+					if _, cerr := io.Copy(dst, file); cerr != nil {
+						fmt.Printf("copy error: %v\n", cerr)
+					}
+					field.SetString("/admin/uploads/" + newName)
+				}
 			}
 			continue
 		}
@@ -178,7 +246,10 @@ func HandleSave(reg *admin.Registry, res *resource.Resource, w http.ResponseWrit
 			field.SetBool(val == "true" || val == "on" || val == "1")
 		}
 	}
-	reg.DB.Save(model)
+	if err := reg.DB.Save(model).Error; err != nil {
+		http.Error(w, "Database error", 500)
+		return
+	}
 	newID := fmt.Sprintf("%v", elem.FieldByName("ID").Interface())
 	act := "Create"
 	if isUpdate {
@@ -189,9 +260,13 @@ func HandleSave(reg *admin.Registry, res *resource.Resource, w http.ResponseWrit
 	http.Redirect(w, r, "/admin/"+res.Name, 303)
 }
 
+// HandleDelete removes a resource record.
 func HandleDelete(reg *admin.Registry, res *resource.Resource, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
 	id := r.URL.Query().Get("id")
-	internal.Delete(reg, res.Name, id)
+	if err := internal.Delete(reg, res.Name, id); err != nil {
+		http.Error(w, "Delete failed", 500)
+		return
+	}
 	internal.RecordAction(reg, user, res.Name, id, "Delete", "Record deleted")
 	reg.SetFlash(w, fmt.Sprintf("%s deleted successfully", res.Name))
 	http.Redirect(w, r, "/admin/"+res.Name, 303)

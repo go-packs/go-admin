@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"html/template"
+	"net/http"
+	"time"
+
 	"github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/models"
 	"github.com/go-packs/go-admin/view"
 	"github.com/google/uuid"
-	"html/template"
-	"net/http"
-	"time"
 )
 
 func Login(reg *admin.Registry) http.HandlerFunc {
@@ -24,8 +25,8 @@ func Login(reg *admin.Registry) http.HandlerFunc {
 		}
 		sessionID := uuid.New().String()
 		reg.DB.Create(&models.Session{
-			ID: sessionID, 
-			UserID: user.ID, 
+			ID:        sessionID,
+			UserID:    user.ID,
 			ExpiresAt: time.Now().Add(time.Duration(reg.Config.SessionTTL) * time.Hour),
 		})
 		http.SetCookie(w, &http.Cookie{Name: "admin_session", Value: sessionID, Path: "/admin", HttpOnly: true})
@@ -48,12 +49,18 @@ func Logout(reg *admin.Registry) http.HandlerFunc {
 func RenderLogin(reg *admin.Registry, w http.ResponseWriter, r *http.Request, errorMsg string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	tmpl := template.Must(template.ParseFS(admin.TemplateFS, "templates/login.html"))
-	styleContent, _ := admin.TemplateFS.ReadFile("templates/style.css")
-	
+	styleContent, err := admin.TemplateFS.ReadFile("templates/style.css")
+	if err != nil {
+		styleContent = []byte("")
+	}
+
 	pd := view.PageData{
-		SiteTitle: reg.Config.SiteTitle, 
-		Error:     errorMsg, 
+		SiteTitle: reg.Config.SiteTitle,
+		Error:     errorMsg,
 		CSS:       template.CSS(styleContent),
 	}
-	tmpl.Execute(w, pd)
+	if err := tmpl.Execute(w, pd); err != nil {
+		http.Error(w, "Template error", 500)
+		return
+	}
 }

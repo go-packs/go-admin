@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+
 	"github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/server"
 	"github.com/go-packs/go-admin/view"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"html/template"
-	"log"
-	"net/http"
 )
 
 type Role struct {
@@ -18,34 +19,38 @@ type Role struct {
 }
 
 type User struct {
-	ID    uint   `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
 	Email string
 	Role  string
 }
 
 type Product struct {
-	ID    uint   `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
 	Name  string
 	Price float64
 	Image string
 }
 
 type ProductInfo struct {
-	ID          uint `gorm:"primaryKey"`
-	ProductID   uint
-	Description string
+	ID           uint `gorm:"primaryKey"`
+	ProductID    uint
+	Description  string
 	Manufacturer string
 }
 
 func main() {
 	db, err := gorm.Open(sqlite.Open("admin.db"), &gorm.Config{})
-	if err != nil { log.Fatal("failed to connect database") }
+	if err != nil {
+		log.Fatal("failed to connect database")
+	}
 
 	db.AutoMigrate(&User{}, &Product{}, &ProductInfo{}, &admin.Permission{}, &Role{}, &admin.AdminUser{}, &admin.Session{}, &admin.AuditLog{})
 
 	adm := admin.NewRegistry(db)
 	conf, _ := admin.LoadConfig("admin.yml")
-	if conf != nil { adm.SetConfig(conf) }
+	if conf != nil {
+		adm.SetConfig(conf)
+	}
 
 	roles := []string{"admin", "editor", "viewer"}
 
@@ -69,8 +74,13 @@ func main() {
 		RegisterField("Role", "User Role", false).
 		SetFieldType("Role", "select", roles...).
 		SetDecorator("Role", func(val interface{}) template.HTML {
-			role := val.(string); color := "#64748b"
-			if role == "admin" { color = "#ef4444" } else if role == "editor" { color = "#3b82f6" }
+			role := val.(string)
+			color := "#64748b"
+			if role == "admin" {
+				color = "#ef4444"
+			} else if role == "editor" {
+				color = "#3b82f6"
+			}
 			return template.HTML(fmt.Sprintf(`<span style="background: %s; color: white; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">%s</span>`, color, role))
 		}).
 		AddSidebar("Quick Actions", func(res *admin.Resource, item interface{}) template.HTML {
@@ -110,8 +120,17 @@ func main() {
 
 	// Charts
 	adm.AddChart("Users by Role", "pie", func(db *gorm.DB) ([]string, []float64) {
-		var results []struct { Role string; Count int64 }; db.Model(&User{}).Select("role, count(*) as count").Group("role").Scan(&results)
-		labels := []string{}; values := []float64{}; for _, r := range results { labels, values = append(labels, r.Role), append(values, float64(r.Count)) }; return labels, values
+		var results []struct {
+			Role  string
+			Count int64
+		}
+		db.Model(&User{}).Select("role, count(*) as count").Group("role").Scan(&results)
+		labels := []string{}
+		values := []float64{}
+		for _, r := range results {
+			labels, values = append(labels, r.Role), append(values, float64(r.Count))
+		}
+		return labels, values
 	})
 
 	// Custom Pages
@@ -121,13 +140,18 @@ func main() {
 	})
 
 	// Seed Data
-	var adminCount int64; db.Model(&admin.AdminUser{}).Count(&adminCount)
+	var adminCount int64
+	db.Model(&admin.AdminUser{}).Count(&adminCount)
 	if adminCount == 0 {
 		adminUser := &admin.AdminUser{Email: "admin@example.com", Role: "admin"}
-		adminUser.SetPassword("password123"); db.Create(adminUser)
-		db.Create(&Role{Name: "admin"}); db.Create(&Role{Name: "editor"}); db.Create(&Role{Name: "viewer"})
+		adminUser.SetPassword("password123")
+		db.Create(adminUser)
+		db.Create(&Role{Name: "admin"})
+		db.Create(&Role{Name: "editor"})
+		db.Create(&Role{Name: "viewer"})
 		db.Create(&admin.Permission{Role: "editor", ResourceName: "Product", Action: "list"})
-		p1 := &Product{Name: "Mechanical Keyboard", Price: 150.00}; db.Create(p1)
+		p1 := &Product{Name: "Mechanical Keyboard", Price: 150.00}
+		db.Create(p1)
 		db.Create(&ProductInfo{ProductID: p1.ID, Description: "Blue Switches", Manufacturer: "Razer"})
 		db.Create(&User{Email: "user@example.com", Role: "editor"})
 	}

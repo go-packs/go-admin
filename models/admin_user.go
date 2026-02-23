@@ -1,3 +1,4 @@
+// Package models defines GORM models used by the admin panel.
 package models
 
 import (
@@ -14,7 +15,9 @@ type AdminUser struct {
 
 func (u *AdminUser) SetPassword(password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	u.PasswordHash = string(hash)
 	return nil
 }

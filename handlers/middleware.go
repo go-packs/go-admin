@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/internal"
-	"net/http"
 )
 
 func AuthGuard(reg *admin.Registry, next http.HandlerFunc) http.HandlerFunc {

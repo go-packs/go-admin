@@ -2,10 +2,11 @@ package view
 
 import (
 	"fmt"
-	"github.com/go-packs/go-admin"
-	"github.com/go-packs/go-admin/models"
 	"html/template"
 	"net/http"
+
+	"github.com/go-packs/go-admin"
+	"github.com/go-packs/go-admin/models"
 )
 
 func RenderDashboard(reg *admin.Registry, w http.ResponseWriter, r *http.Request, user *models.AdminUser) {
@@ -24,9 +25,12 @@ func RenderDashboard(reg *admin.Registry, w http.ResponseWriter, r *http.Request
 	styleContent, _ := admin.TemplateFS.ReadFile("templates/style.css")
 	tmpl := LoadTemplates("templates/dashboard.html")
 	pd := PageData{
-		SiteTitle: reg.Config.SiteTitle, GroupedResources: reg.GetGroupedResources(), GroupedPages: reg.GetGroupedPages(), 
+		SiteTitle: reg.Config.SiteTitle, GroupedResources: reg.GetGroupedResources(), GroupedPages: reg.GetGroupedPages(),
 		User: user, Stats: stats, CSS: template.CSS(styleContent), ChartData: widgets,
 		Flash: reg.GetFlash(w, r),
 	}
-	tmpl.ExecuteTemplate(w, "dashboard.html", pd)
+	if err := tmpl.ExecuteTemplate(w, "dashboard.html", pd); err != nil {
+		http.Error(w, "Template error", 500)
+		return
+	}
 }
