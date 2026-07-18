@@ -16,7 +16,7 @@ Usage:
 const mainTemplate = `package main
 
 import (
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/server"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

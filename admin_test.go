@@ -1,10 +1,12 @@
 package admin_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/internal"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -109,6 +111,63 @@ func TestCore(t *testing.T) {
 		}
 		if conf.SiteTitle != "Custom" || conf.DefaultPerPage != 50 {
 			t.Error("Config load failed")
+		}
+	})
+}
+
+func TestRegistryHelpers(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	reg := admin.NewRegistry(db)
+
+	t.Run("GroupsResourcesAndPages", func(t *testing.T) {
+		reg.Register(TestModel{}).SetGroup("Content")
+		reg.AddPage("Status", "Operations", func(w http.ResponseWriter, r *http.Request) {})
+
+		resourceGroups := reg.GetGroupedResources()
+		if len(resourceGroups["Content"]) != 1 || resourceGroups["Content"][0].Name != "TestModel" {
+			t.Fatalf("Unexpected resource groups: %#v", resourceGroups)
+		}
+
+		pageGroups := reg.GetGroupedPages()
+		if len(pageGroups["Operations"]) != 1 || pageGroups["Operations"][0].Name != "Status" {
+			t.Fatalf("Unexpected page groups: %#v", pageGroups)
+		}
+	})
+
+	t.Run("ResourceNamesAndCharts", func(t *testing.T) {
+		names := reg.ResourceNames()
+		if len(names) != 1 || names[0] != "TestModel" {
+			t.Fatalf("Unexpected resource names: %#v", names)
+		}
+
+		reg.AddChart("Records", "bar", func(db *gorm.DB) ([]string, []float64) {
+			return []string{"A"}, []float64{1}
+		})
+		if len(reg.Charts) != 1 || reg.Charts[0].Label != "Records" || reg.Charts[0].Type != "bar" {
+			t.Fatalf("Unexpected chart registration: %#v", reg.Charts)
+		}
+	})
+
+	t.Run("FlashCookieRoundTrip", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		reg.SetFlash(w, "Saved")
+		cookies := w.Result().Cookies()
+		if len(cookies) != 1 || cookies[0].Name != "admin_flash" || cookies[0].Value != "Saved" {
+			t.Fatalf("Unexpected flash cookie: %#v", cookies)
+		}
+
+		req := httptest.NewRequest("GET", "/admin", nil)
+		req.AddCookie(cookies[0])
+		clearWriter := httptest.NewRecorder()
+		if got := reg.GetFlash(clearWriter, req); got != "Saved" {
+			t.Fatalf("Expected flash Saved, got %q", got)
+		}
+		clearCookies := clearWriter.Result().Cookies()
+		if len(clearCookies) != 1 || clearCookies[0].MaxAge != -1 {
+			t.Fatalf("Expected flash clearing cookie, got %#v", clearCookies)
 		}
 	})
 }

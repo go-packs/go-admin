@@ -4,7 +4,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/resource"
 )
 

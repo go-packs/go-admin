@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 )
 
 func HandleSearchAPI(reg *admin.Registry, resourceName string, w http.ResponseWriter, r *http.Request) {

@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

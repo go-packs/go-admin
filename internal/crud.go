@@ -4,7 +4,7 @@ package internal
 import (
 	"reflect"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 )
 
 // List returns all records for a registered resource.

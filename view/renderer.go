@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"reflect"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/models"
 	"github.com/go-packs/go-admin/resource"
 )
