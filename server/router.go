@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/handlers"
 	"github.com/go-packs/go-admin/internal"
 	"github.com/go-packs/go-admin/view"

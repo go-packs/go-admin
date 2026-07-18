@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/internal"
 	"github.com/go-packs/go-admin/models"
 	"github.com/go-packs/go-admin/resource"

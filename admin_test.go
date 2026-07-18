@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/internal"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

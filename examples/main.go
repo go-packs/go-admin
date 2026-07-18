@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 	"github.com/go-packs/go-admin/server"
 	"github.com/go-packs/go-admin/view"
 	"gorm.io/driver/sqlite"

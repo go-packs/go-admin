@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/go-packs/go-admin"
+	admin "github.com/go-packs/go-admin"
 )
 
 type Server struct {
