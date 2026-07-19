@@ -1,6 +1,6 @@
 # Go Admin
 
-A high-performance, modern, and extensible administration framework for Go, inspired by Active Admin. 
+A high-performance, modern, and extensible administration framework for Go, inspired by Active Admin.
 
 Go Admin uses reflection and GORM to automatically generate a professional-grade back-office for your database models with minimal configuration.
 
@@ -23,18 +23,34 @@ Go Admin uses reflection and GORM to automatically generate a professional-grade
 go get github.com/go-packs/go-admin
 ```
 
+## Try The Demo
+
+This repository includes a runnable example application with seeded data:
+
+```bash
+go run ./examples
+```
+
+The example creates `examples/demo.db` on first run. Open `http://localhost:8080/admin` and sign in with:
+
+```text
+Email: admin@example.com
+Password: password123
+```
+
 ## Quick Start
 
 ```go
 package main
 
 import (
-    "github.com/go-packs/go-admin"
-    "github.com/go-packs/go-admin/server" // Import the server package for routing
+    "log"
+    "net/http"
+
+    admin "github.com/go-packs/go-admin"
+    "github.com/go-packs/go-admin/server"
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
-    "net/http"
-    "log"
 )
 
 type Product struct {
@@ -47,18 +63,15 @@ func main() {
     db, _ := gorm.Open(sqlite.Open("admin.db"), &gorm.Config{})
     db.AutoMigrate(&Product{}, &admin.AdminUser{}, &admin.Permission{}, &admin.Session{}, &admin.AuditLog{})
 
-    // Initialize Admin
     adm := admin.NewRegistry(db)
 
-    // Register a Resource
     adm.Register(Product{}).
         SetGroup("Inventory").
         RegisterField("ID", "ID", true).
         RegisterField("Name", "Product Name", false).
         RegisterField("Price", "Price", false)
 
-    // Start Server using the modular router
-    log.Println("🚀 Admin panel starting on http://localhost:8080/admin")
+    log.Println("Admin panel starting on http://localhost:8080/admin")
     http.Handle("/admin/", server.NewRouter(adm))
     http.ListenAndServe(":8080", nil)
 }
@@ -101,7 +114,7 @@ go test ./...
 
 ## Documentation
 
-For full feature documentation including **Associations**, **Scopes**, **Custom Actions**, and **Charts**, please refer to the [Usage Guide](USAGE.md).
+For full feature documentation including associations, scopes, custom actions, batch actions, charts, and custom pages, see the [Usage Guide](USAGE.md).
 
 ## License
 
