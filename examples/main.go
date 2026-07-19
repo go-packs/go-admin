@@ -39,7 +39,7 @@ type ProductInfo struct {
 }
 
 func main() {
-	db, err := gorm.Open(sqlite.Open("admin.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("examples/demo.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database")
 	}
@@ -156,7 +156,7 @@ func main() {
 		db.Create(&User{Email: "user@example.com", Role: "editor"})
 	}
 
-	fmt.Printf("\n🚀 Admin running at http://localhost:8080/admin\n")
+	fmt.Printf("\nAdmin running at http://localhost:8080/admin\n")
 	http.Handle("/admin/", server.NewRouter(adm))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
