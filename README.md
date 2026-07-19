@@ -116,6 +116,8 @@ go test ./...
 
 For full feature documentation including associations, scopes, custom actions, batch actions, charts, and custom pages, see the [Usage Guide](USAGE.md).
 
+After GitHub Pages is enabled, the documentation site will be available at `https://go-packs.github.io/go-admin/`. Go API documentation is available on pkg.go.dev after the repository is public.
+
 ## License
 
 This project is licensed under the MIT License.
