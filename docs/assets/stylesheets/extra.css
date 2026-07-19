@@ -1,9 +1,26 @@
 :root {
-  --md-primary-fg-color: #111827;
-  --md-accent-fg-color: #4f46e5;
   --go-admin-muted: #64748b;
   --go-admin-border: #e5e7eb;
   --go-admin-surface: #f8fafc;
+  --go-admin-card: #ffffff;
+  --go-admin-text: #111827;
+  --go-admin-hero: linear-gradient(135deg, rgba(79, 70, 229, 0.08), transparent 42%), var(--go-admin-surface);
+}
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #111827;
+  --md-accent-fg-color: #4f46e5;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #020617;
+  --md-accent-fg-color: #818cf8;
+  --go-admin-muted: #94a3b8;
+  --go-admin-border: #1f2937;
+  --go-admin-surface: #0f172a;
+  --go-admin-card: #111827;
+  --go-admin-text: #f8fafc;
+  --go-admin-hero: linear-gradient(135deg, rgba(129, 140, 248, 0.14), transparent 45%), #0f172a;
 }
 
 .md-header,
@@ -39,9 +56,7 @@
   padding: 2rem;
   border: 1px solid var(--go-admin-border);
   border-radius: 0.75rem;
-  background:
-    linear-gradient(135deg, rgba(79, 70, 229, 0.08), transparent 42%),
-    var(--go-admin-surface);
+  background: var(--go-admin-hero);
 }
 
 .hero h1 {
@@ -71,7 +86,7 @@
   padding: 0.45rem 0.85rem;
   border-radius: 0.45rem;
   border: 1px solid var(--go-admin-border);
-  color: #111827;
+  color: var(--go-admin-text);
   font-weight: 650;
 }
 
@@ -92,7 +107,7 @@
   padding: 1rem;
   border: 1px solid var(--go-admin-border);
   border-radius: 0.6rem;
-  background: #ffffff;
+  background: var(--go-admin-card);
 }
 
 .feature-card h3 {
