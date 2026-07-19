@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://go-packs.github.io/go-admin/</loc>
+         <lastmod>2026-07-19</lastmod>
+    </url>
+    <url>
+         <loc>https://go-packs.github.io/go-admin/examples/</loc>
+         <lastmod>2026-07-19</lastmod>
+    </url>
+    <url>
+         <loc>https://go-packs.github.io/go-admin/publishing/</loc>
+         <lastmod>2026-07-19</lastmod>
+    </url>
+    <url>
+         <loc>https://go-packs.github.io/go-admin/quick-start/</loc>
+         <lastmod>2026-07-19</lastmod>
+    </url>
+    <url>
+         <loc>https://go-packs.github.io/go-admin/usage/</loc>
+         <lastmod>2026-07-19</lastmod>
+    </url>
+</urlset>
